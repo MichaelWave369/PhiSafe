@@ -1,0 +1,13 @@
+{
+  "name": "PhiSafe | Offline Household Readiness",
+  "short_name": "PhiSafe",
+  "description": "Private preparedness planning for people and animals.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b141d",
+  "theme_color": "#101b25",
+  "icons": [
+    {"src": "./icons/shield.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
