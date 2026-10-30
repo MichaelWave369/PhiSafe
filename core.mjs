@@ -92,14 +92,20 @@ export function metrics(state, days = 14) {
   const animalWaterNeeded = animals > 0 && h.animalWaterDailyGallons > 0
     ? h.animalWaterDailyGallons * targetDays : null;
   const rosterCount = state.pets.length;
+  const rosterCounts = {
+    dogs: state.pets.filter(p => p.species === "dog").length,
+    cats: state.pets.filter(p => p.species === "cat").length,
+    otherPets: state.pets.filter(p => p.species === "other").length
+  };
   return {
     targetDays,
-    animals, rosterCount,
+    animals, rosterCount, rosterCounts,
     humanWaterNeeded, animalWaterNeeded,
     humanWaterDays: h.people > 0 ? h.humanWaterGallons / h.people : null,
     animalWaterDays: animals === 0 ? null : (h.animalWaterDailyGallons > 0
       ? h.animalWaterGallons / h.animalWaterDailyGallons : null),
-    rosterComplete: animals > 0 && rosterCount === animals,
+    rosterComplete: animals > 0 && rosterCount === animals &&
+      rosterCounts.dogs === h.dogs && rosterCounts.cats === h.cats && rosterCounts.otherPets === h.otherPets,
     transportReady: h.people > 0 && h.peopleSeats >= h.people && h.animalSpaces >= animals,
     transportKnown: h.peopleSeats > 0 && (animals === 0 || h.animalSpaces > 0),
     tasksDone: ACTIONS.filter(a => state.tasks[a.id]).length,
