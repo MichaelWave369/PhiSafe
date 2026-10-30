@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.1.0, first functional MVP**. Static web app, zero build dependencies, no login, no tracking.
+**v0.2.0, Rung 2 evacuation and backup-power planning**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -32,6 +32,9 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 2 visual evacuation loading planner:** explicit passenger/animal capacity per vehicle, one unique vehicle slot per animal, missing roster warnings, and printable allocation-aware 72-hour manifests.
+- **Rung 2 backup power estimates:** battery rated watt-hours, configurable usability and inverter loss assumptions, per-device watts/hours-per-day and simultaneous load check.
+- **Rung 2 72-hour go-bag checklist:** people, pet, shared and per-animal tasks; locally saved packing marks; dedicated printable sheet.
 - Transport capacity gap checks, destination/contact fields and six core evacuation actions.
 - Print-friendly summary; explicit private JSON export and import.
 - Static links to official public guidance.
@@ -54,13 +57,32 @@ A Pages workflow deploys on pushes to `main`. In repository **Settings → Pages
 ## Architecture
 
 - `index.html`, `styles.css`, `app.js`: no-framework UI, responsive and print friendly.
-- `core.mjs`: normalized schema and calculations, import hardening.
+- `core.mjs`, `rung2.mjs`: normalized schema, older-backup compatibility, evacuation/power/manifest calculations.
+- `rung2-ui.mjs`: evacuation loading, power and go-bag view rendering.
 - `sw.js`, `manifest.webmanifest`: static offline shell.
 - `tests/core.test.mjs`: core invariants.
 - `.github/workflows/`: tests and Pages deployment.
 
-Future work should include an accessible first-run wizard, richer per-species care plans, automated expiry reminders **only with consent**, optional encrypted local backups, better accessibility/headset checks, offline official printable guides with source/date tracking, and a transport layout planner. Those features are **not** implemented.
+Future work should include a full in-browser field test, an accessible first-run wizard, richer per-species care plans, automated expiry reminders **only with consent**, optional encrypted local backups, better accessibility/headset checks, offline official printable guides with source/date tracking, and a transport layout planner. Those features are **not** implemented.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+
+## Rung 2 safety notes
+
+- **Migrates previous data:** Existing schema-1 backups and browser records import with empty Rung 2 sections; no household records are committed to this repository.
+- **Vehicle planner:** Counts are not proof of secure restraint, actual crate fit, ventilation, accessibility, legal passenger capacity, climate control or road access. No passengers or animals should ride in a towed fifth-wheel.
+- **Battery planner formula:** estimated usable Wh = rated battery Wh × usable fraction × assumed inverter efficiency. Daily Wh = sum(device W × hours/day). Estimated days = usable Wh / daily Wh. Unknown input gives an unknown result. It omits solar, generator charging, aging, cold weather, standby inverter draw, reserve margin and peak startup surges. Do not use it for life-support equipment or to authorize electrical modifications.
+- **Fuel generator warning:** Use fuel generators outdoors at least 20 feet from doors, windows and vents; keep exhaust away and use functional CO detectors. See [California Department of Public Health's carbon monoxide guidance](https://www.cdph.ca.gov/Programs/EPO/Pages/Power-outage-and-carbon-monoxide-poisoning.aspx).
+- **72-hour manifest:** a short-term evacuation kit, not an adequate full pet stockpile; [CDC pet emergency kit guidance](https://www.cdc.gov/healthy-pets/emergency-preparedness/preparedness-kit.html) recommends a longer reserve. The printable sheet contains private household fields, so safeguard it.
+- **No official live feeds:** Never delay a real evacuation to finish a checklist or device power calculation.
+
+### Rung 2 test scenarios
+
+1. Add two people, two dogs and one cat, then verify passenger and animal allocations.
+2. Try duplicate animal spaces (should be unavailable) and changing vehicle capacity (assignments outside capacity should be cleared and treated as unassigned).
+3. Add an approximately 1000 Wh battery at 80% usable and 85% inverter efficiency; for 160 Wh/day listed load, the mathematical estimate should show 4.25 days, excluding real-world losses.
+4. Prepare a 72-hour checklist, print it and confirm every animal has its own individual line.
+5. Export plan, reload browser, import backup, test offline after a successful HTTPS visit. Verify no private family data appears in GitHub.
