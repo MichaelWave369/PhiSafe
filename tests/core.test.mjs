@@ -51,3 +51,19 @@ test("shortfalls and expiry are deterministic", () => {
   assert.equal(metrics(s).inventoryShortfalls.length, 1);
   assert.equal(upcomingExpiry(s.supplies[0], "2026-01-01"), "expired");
 });
+
+test("roster requires species-matched entries and stable IDs", () => {
+  const s = defaultState();
+  s.household.dogs = 1;
+  s.household.cats = 1;
+  s.pets = [
+    {id:"dog-1",name:"Dog A",species:"dog",loaded:false},
+    {id:"dog-2",name:"Dog B",species:"dog",loaded:false}
+  ];
+  assert.equal(metrics(s).rosterComplete, false);
+  s.pets[1].species = "cat";
+  assert.equal(metrics(s).rosterComplete, true);
+  const first = normalizeState(s);
+  const second = normalizeState(first);
+  assert.deepEqual(second.pets.map(p => p.id), first.pets.map(p => p.id));
+});
