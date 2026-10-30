@@ -20,6 +20,14 @@ const qty = (v, max = 1e7) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(0, n)) : 0;
 };
 const id = v => cleanText(v, 80).replace(/[^a-zA-Z0-9_-]/g, "") || "item";
+const uniqueId = (value, index, used) => {
+  const base = id(value);
+  let candidate = base;
+  let serial = 0;
+  while (used.has(candidate)) candidate = base + "-" + index + "-" + (++serial);
+  used.add(candidate);
+  return candidate;
+};
 export function defaultState() {
   return {
     schema: CURRENT_SCHEMA,
@@ -49,8 +57,9 @@ export function normalizeState(raw) {
     "humanWaterGallons", "animalWaterGallons", "animalWaterDailyGallons",
     "peopleFoodDays", "dogFoodDays", "catFoodDays", "otherPetsFoodDays", "medsDays"
   ]) result.household[field] = qty(h[field]);
+  const supplyIds = new Set();
   if (Array.isArray(raw.supplies)) result.supplies = raw.supplies.slice(0, 500).map((x, i) => ({
-    id: id(x?.id) + "-" + i,
+    id: uniqueId(x?.id, i, supplyIds),
     name: cleanText(x?.name, 120),
     category: ["food", "water", "medical", "equipment", "sanitation", "other"].includes(x?.category) ? x.category : "other",
     quantity: qty(x?.quantity),
@@ -58,8 +67,9 @@ export function normalizeState(raw) {
     unit: cleanText(x?.unit, 24),
     expires: /^\d{4}-\d{2}-\d{2}$/.test(x?.expires || "") ? x.expires : ""
   })).filter(x => x.name);
+  const petIds = new Set();
   if (Array.isArray(raw.pets)) result.pets = raw.pets.slice(0, 200).map((x, i) => ({
-    id: id(x?.id) + "-" + i,
+    id: uniqueId(x?.id, i, petIds),
     name: cleanText(x?.name, 100),
     species: ["dog", "cat", "other"].includes(x?.species) ? x.species : "other",
     carrier: cleanText(x?.carrier, 100),
