@@ -19,6 +19,8 @@ jobs:
           node --check core.mjs
           node --check rung2.mjs
           node --check rung2-ui.mjs
+          node --check rung3.mjs
+          node --check rung3-ui.mjs
           node --check sw.js
       - name: Unit tests
         run: node --test tests/*.test.mjs

@@ -49,3 +49,11 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:v
 .pet-assignment .field{min-width:0}
 .pet-assignment .field select{max-width:100%}
 @media(max-width:650px){.pet-assignment{grid-template-columns:1fr;gap:8px}.vehicle-card{padding:16px}.seat-layout{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Rung 3: high-contrast, keyboard-reachable rehearsal controls */
+.visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+table .task{align-items:center;justify-content:center}
+table .task input{margin:0;cursor:pointer}
+table .task input:disabled{cursor:not-allowed;opacity:.5}
+.vehicle-card button:focus-visible,.pet-assignment select:focus-visible{outline-offset:3px}
+@media print{.print-only table{border-collapse:collapse;width:100%}.print-only th,.print-only td{border:1px solid #555;padding:6px;vertical-align:top}.print-only .break{break-inside:avoid}}
