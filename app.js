@@ -3,12 +3,15 @@ import { loadingReport } from "./rung2.mjs";
 import { renderLoading, renderPower, renderGoBags, manifestPrint } from "./rung2-ui.mjs";
 import { rehearsalReport, buildRehearsalRecord, newRehearsal } from "./rung3.mjs";
 import { renderDrill, printLoadingSheet } from "./rung3-ui.mjs";
+import { assessFieldReadiness, inspectOfflineShell } from "./rung4.mjs";
+import { renderField, printFieldCard } from "./rung4-ui.mjs";
 
 const root = document.querySelector("#content");
 const printRoot = document.querySelector("#printReport");
 const notice = document.querySelector("#appNotice");
 let tab = "overview";
 let targetDays = 14;
+let offlineAuditResult = null;
 let state = load();
 
 function load() {
@@ -285,6 +288,7 @@ function render() {
     power: () => renderPower(state,helpers),
     bags: () => renderGoBags(state,helpers),
     drill: () => renderDrill(state,helpers),
+    field: () => renderField(state,offlineAuditResult,helpers),
     guides: renderGuides
   };
   root.innerHTML = views[tab]();
@@ -318,6 +322,30 @@ document.addEventListener("click", event => {
   const action = control.dataset.action;
   const key = control.dataset.id;
   if (action === "print") { renderPrint(); window.print(); return; }
+  if (action === "print-field") {
+    printRoot.innerHTML = printFieldCard(state,e);
+    window.addEventListener("afterprint",renderPrint,{once:true});
+    window.print();
+    return;
+  }
+  if (action === "offline-audit") {
+    const supported = "caches" in window && "serviceWorker" in navigator;
+    inspectOfflineShell({
+      secure:window.isSecureContext === true,
+      cacheStorageAvailable:supported,
+      controller:supported && Boolean(navigator.serviceWorker.controller),
+      getCacheNames:()=>caches.keys(),
+      hasCached:async(name,file)=>{
+        const cache=await caches.open(name);
+        const cached=await cache.match(new URL(file,location.href));
+        return Boolean(cached);
+      }
+    }).then(result=>{
+      offlineAuditResult=result;
+      render();
+    }).catch(()=>tell("Cache audit failed. Offline availability remains unverified."));
+    return;
+  }
   if (action === "print-loading") {
     printRoot.innerHTML = printLoadingSheet(state,e);
     window.addEventListener("afterprint", renderPrint, {once:true});
@@ -399,6 +427,7 @@ document.addEventListener("click", event => {
   if (action === "reset-all" && confirm("Permanently remove this browser’s PhiSafe plan? Export a backup first if needed.")) {
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
     state = defaultState();
+    offlineAuditResult = null;
     tab = "overview";
     render();
     tell("This browser’s PhiSafe plan was cleared. Existing downloaded backups were not deleted.");
@@ -409,6 +438,13 @@ document.addEventListener("change", event => {
   if (el.dataset.action === "toggle-task") {
     state.tasks[el.dataset.id] = el.checked;
     save();
+  }
+  if (el.dataset.action === "field-verify") {
+    if (el.checked) state.field.checks[el.dataset.id]=new Date().toISOString();
+    else delete state.field.checks[el.dataset.id];
+    state=normalizeState(state);
+    save();
+    return;
   }
   if (el.dataset.action === "drill-stage") {
     if (!state.rehearsal.startedAt) return;
@@ -470,7 +506,7 @@ document.addEventListener("change", event => {
 document.addEventListener("submit", event => {
   const form = event.target;
   const id = form.id || form.dataset.form;
-  if (!["householdForm","supplyForm","petForm","planForm","vehicleAddForm","edit-vehicle","powerSettingsForm","powerDeviceForm","drillPeopleForm"].includes(id)) return;
+  if (!["householdForm","supplyForm","petForm","planForm","vehicleAddForm","edit-vehicle","powerSettingsForm","powerDeviceForm","drillPeopleForm","fieldNotesForm"].includes(id)) return;
   event.preventDefault();
   const data = Object.fromEntries(new FormData(form).entries());
   if (form.id === "householdForm") {
@@ -497,6 +533,12 @@ document.addEventListener("submit", event => {
     Object.keys(next.plan).forEach(key => next.plan[key] = data[key]);
     state = normalizeState(next);
     save();
+  }
+  if (id === "fieldNotesForm") {
+    state.field.notes=data.notes;
+    state=normalizeState(state);
+    save();
+    return;
   }
   if (id === "drillPeopleForm") {
     if (!state.rehearsal.startedAt) return;
@@ -549,6 +591,7 @@ document.querySelector("#importFile").addEventListener("change", async event => 
     const replacement = normalizeState(parsed);
     if (!confirm("Replace this browser’s PhiSafe plan with the selected backup? Export your current plan first if needed.")) return;
     state = replacement;
+    offlineAuditResult = null;
     tab = "overview";
     save();
     tell("Backup imported successfully. Check quantities, destination details and roster before relying on it.");

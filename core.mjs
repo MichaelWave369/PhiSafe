@@ -1,5 +1,6 @@
 import { defaultRung2, normalizeRung2 } from "./rung2.mjs";
 import { defaultRung3, normalizeRung3 } from "./rung3.mjs";
+import { defaultRung4, normalizeRung4 } from "./rung4.mjs";
 // PhiSafe core: deterministic calculations and strict import normalization.
 // No network code and no household data shipped in this file.
 export const STORAGE_KEY = "phisafe-household-v1";
@@ -45,7 +46,8 @@ export function defaultState() {
     plan: { alertZone: "", meetingPlace: "", backupPlace: "", routeA: "", routeB: "", emergencyContact: "", notes: "" },
     updatedAt: null,
     ...defaultRung2(),
-    ...defaultRung3()
+    ...defaultRung3(),
+    ...defaultRung4()
   };
 }
 export function normalizeState(raw) {
@@ -88,6 +90,7 @@ export function normalizeState(raw) {
   result.updatedAt = typeof raw.updatedAt === "string" ? cleanText(raw.updatedAt, 40) : null;
   Object.assign(result, normalizeRung2(raw, result.pets));
   Object.assign(result, normalizeRung3(raw, result.pets));
+  Object.assign(result, normalizeRung4(raw));
   return result;
 }
 export function metrics(state, days = 14) {
