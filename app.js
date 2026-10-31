@@ -1,4 +1,6 @@
 import { STORAGE_KEY, ACTIONS, defaultState, normalizeState, metrics, upcomingExpiry } from "./core.mjs";
+import { loadingReport } from "./rung2.mjs";
+import { renderLoading, renderPower, renderGoBags, manifestPrint } from "./rung2-ui.mjs";
 
 const root = document.querySelector("#content");
 const printRoot = document.querySelector("#printReport");
@@ -75,6 +77,7 @@ function textField(label, key, placeholder = "", big = false) {
 }
 function renderOverview() {
   const m = metrics(state, targetDays);
+  const loading = loadingReport(state);
   const h = state.household;
   const hasPeople = h.people > 0;
   const humanWater = m.humanWaterNeeded;
@@ -88,7 +91,7 @@ function renderOverview() {
   let flags = [];
   if (!hasPeople) flags.push("Set the number of people in your household.");
   if (needPets && !m.rosterComplete) flags.push("Add every animal to the roster, with carrier information.");
-  if (hasPeople && (!m.transportKnown || !m.transportReady)) flags.push("Verify enough seats and secured animal spaces for a one-trip evacuation.");
+  if (hasPeople && !loading.allocationComplete) flags.push("Finish individual vehicle, passenger and animal slot allocations in Loading.");
   if (hasPeople && h.humanWaterGallons < humanWater) flags.push("Increase stored human water or plan a reliable alternative.");
   if (needPets && m.animalWaterNeeded === null) flags.push("Estimate animal water needs from real consumption and veterinary guidance.");
   if (needPets && m.animalWaterNeeded !== null && h.animalWaterGallons < m.animalWaterNeeded) flags.push("Increase animal drinking water supplies.");
@@ -101,7 +104,7 @@ function renderOverview() {
     '</div></div><div class="section grid four">' +
     stat("People", hasPeople ? h.people : "Not set", "Household count") +
     stat("Animals", m.animals || "Not set", fmt(m.rosterCount) + " rostered") +
-    stat("Transport", !hasPeople || !m.transportKnown ? "Unknown" : m.transportReady ? "Capacity set" : "Gap found", "Verify actual vehicle layout") +
+    stat("Transport", !hasPeople || !loading.occupancy.length ? "Unplanned" : loading.allocationComplete ? "Allocated" : "Gap found", "Verify actual vehicle layout") +
     stat("Actions", m.tasksDone + " / " + m.tasksTotal, "Core tasks marked complete") +
     '</div><div class="section grid two">' +
     panel("Human water", '<div class="muted">Planning baseline: at least 1 US gallon per person per day for drinking and basic sanitation. Higher needs may apply.</div>' +
@@ -266,9 +269,14 @@ function render() {
     if (selected) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
   });
+  const helpers = {e,fmt,stat,pill};
   const views = {
     overview: renderOverview, household: renderHousehold, supplies: renderSupplies,
-    animals: renderAnimals, evacuation: renderEvacuation, guides: renderGuides
+    animals: renderAnimals, evacuation: renderEvacuation,
+    loading: () => renderLoading(state,helpers),
+    power: () => renderPower(state,helpers),
+    bags: () => renderGoBags(state,helpers),
+    guides: renderGuides
   };
   root.innerHTML = views[tab]();
   renderPrint();
@@ -301,6 +309,12 @@ document.addEventListener("click", event => {
   const action = control.dataset.action;
   const key = control.dataset.id;
   if (action === "print") { renderPrint(); window.print(); return; }
+  if (action === "print-manifest") {
+    printRoot.innerHTML = manifestPrint(state,e);
+    window.addEventListener("afterprint", renderPrint, {once:true});
+    window.print();
+    return;
+  }
   if (action === "export") { exportBackup(); return; }
   if (action === "import") { document.querySelector("#importFile").click(); return; }
   if (action === "horizon") { targetDays = Number(control.dataset.days); render(); return; }
@@ -317,6 +331,23 @@ document.addEventListener("click", event => {
   if (action === "toggle-loaded") {
     const pet = state.pets.find(x => x.id === key);
     if (pet) { pet.loaded = !pet.loaded; save(); }
+    return;
+  }
+  if (action === "delete-vehicle") {
+    const vehicle = state.loading.vehicles.find(v=>v.id===key);
+    if (vehicle && confirm("Remove " + vehicle.name + " and its assigned animal spaces?")) {
+      state.loading.vehicles = state.loading.vehicles.filter(v=>v.id!==key);
+      state.loading.assignments = state.loading.assignments.filter(a=>a.vehicleId!==key);
+      save();
+    }
+    return;
+  }
+  if (action === "delete-power-device") {
+    const device = state.power.devices.find(d=>d.id===key);
+    if (device && confirm("Remove " + device.name + " from the power estimate?")) {
+      state.power.devices = state.power.devices.filter(d=>d.id!==key);
+      save();
+    }
     return;
   }
   if (action === "reset-loaded") {
@@ -337,10 +368,37 @@ document.addEventListener("change", event => {
     state.tasks[el.dataset.id] = el.checked;
     save();
   }
+  if (el.dataset.action === "toggle-manifest") {
+    const id=el.dataset.id;
+    if (el.checked) state.manifest.packed[id]=true;
+    else delete state.manifest.packed[id];
+    save();
+  }
+  if (el.dataset.action === "assign-pet-space") {
+    const petId=el.dataset.id;
+    if (!state.pets.some(p=>p.id===petId)) return;
+    const value=el.value;
+    state.loading.assignments=state.loading.assignments.filter(a=>a.petId!==petId);
+    if (value) {
+      const match=/^([A-Za-z0-9_-]+):([0-9]{1,2})$/.exec(value);
+      if (!match) { tell("Invalid animal space."); render(); return; }
+      const vehicle=state.loading.vehicles.find(v=>v.id===match[1]);
+      const slot=Number(match[2]);
+      const occupied=state.loading.assignments.some(a=>a.vehicleId===match[1] && a.slot===slot);
+      if (!vehicle || slot<1 || slot>vehicle.petSpaces || occupied) {
+        tell("Selected animal space is unavailable. No new assignment was made.");
+        save();
+        return;
+      }
+      state.loading.assignments.push({petId,vehicleId:match[1],slot});
+    }
+    save();
+  }
 });
 document.addEventListener("submit", event => {
   const form = event.target;
-  if (!["householdForm","supplyForm","petForm","planForm"].includes(form.id)) return;
+  const id = form.id || form.dataset.form;
+  if (!["householdForm","supplyForm","petForm","planForm","vehicleAddForm","edit-vehicle","powerSettingsForm","powerDeviceForm"].includes(id)) return;
   event.preventDefault();
   const data = Object.fromEntries(new FormData(form).entries());
   if (form.id === "householdForm") {
@@ -366,6 +424,38 @@ document.addEventListener("submit", event => {
     const next = structuredClone(state);
     Object.keys(next.plan).forEach(key => next.plan[key] = data[key]);
     state = normalizeState(next);
+    save();
+  }
+  if (id === "vehicleAddForm") {
+    if (state.loading.vehicles.length >= 12) { tell("Maximum 12 vehicles in this version."); return; }
+    const next=structuredClone(state);
+    next.loading.vehicles.push({id:newId(),name:data.name,kind:data.kind,peopleSeats:data.peopleSeats,
+      peopleAssigned:data.peopleAssigned,petSpaces:data.petSpaces,notes:data.notes});
+    state=normalizeState(next);
+    save();
+  }
+  if (id === "edit-vehicle") {
+    const vehicle=state.loading.vehicles.find(v=>v.id===form.dataset.id);
+    if (!vehicle) return;
+    Object.assign(vehicle,{name:data.name,kind:data.kind,peopleSeats:data.peopleSeats,
+      peopleAssigned:data.peopleAssigned,petSpaces:data.petSpaces,notes:data.notes});
+    state=normalizeState(state);
+    save();
+  }
+  if (id === "powerSettingsForm") {
+    const next=structuredClone(state);
+    for (const key of ["batteryWh","usablePercent","inverterEfficiencyPercent","inverterContinuousW"]) {
+      next.power[key]=data[key];
+    }
+    state=normalizeState(next);
+    save();
+  }
+  if (id === "powerDeviceForm") {
+    if(state.power.devices.length>=80) { tell("Maximum 80 devices in this version."); return; }
+    const next=structuredClone(state);
+    next.power.devices.push({id:newId(),name:data.name,watts:data.watts,
+      hoursPerDay:data.hoursPerDay,simultaneous:data.simultaneous==="on"});
+    state=normalizeState(next);
     save();
   }
 });
