@@ -13,6 +13,7 @@ test("demo editing, printing, plain export, import and delete safeguards leave s
   await page.getByRole("button",{name:"Try Demo"}).click();
   await expect(page.locator("#demoBanner")).toBeVisible();
   await expect(page.locator("#demoBanner")).toContainText("SAMPLE DATA ONLY");
+  await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:"Quick View"}).click();
   await expect(page.locator("#content").getByText("FICTIONAL DESTINATION A",{exact:false})).toBeVisible();
 
   await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:"Household"}).click();
