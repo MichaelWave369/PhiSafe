@@ -93,5 +93,5 @@ test("an actual install prompt is offered only when browser indicates availabili
     installed:false,promptAvailable:true,cacheAudit:"unverified"
   },helpers);
   assert.match(html,/data-action="pilot-install"/);
-  assert.match(html,/not offered an automatic install prompt/); // should not appear
+  assert.doesNotMatch(html,/did not offer an automatic install prompt/);
 });
