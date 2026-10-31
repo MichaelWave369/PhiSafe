@@ -11,7 +11,7 @@ test("quick reference shows 17 separate animals, switched hazard guidance and pr
   await page.getByRole("button",{name:"Quick Reference",exact:true}).click();
   await expect(page.getByRole("heading",{name:"Emergency Quick View"})).toBeVisible();
   await expect(page.locator(".quick-table tbody tr")).toHaveCount(17);
-  await expect(page.getByText("Synthetic destination A")).toBeVisible();
+  await expect(page.locator("#content").getByText("Synthetic destination A")).toBeVisible();
   await page.getByRole("button",{name:"Flooding & rising water"}).click();
   await expect(page.getByText("Never walk, swim, or drive through floodwater;",{exact:false})).toBeVisible();
   await context.setOffline(true);
