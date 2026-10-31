@@ -20,7 +20,8 @@ test("all sections render without browser exceptions and remain usable on narrow
     ["Power","Backup power planner"],
     ["72-hour bags","72-hour grab-and-go manifest"],
     ["Official guides","Trusted guidance"],
-    ["Encrypted Vault","Private Emergency Vault"]
+    ["Encrypted Vault","Private Emergency Vault"],
+    ["Community Pilot","Community Field Pilot"]
   ];
   for (const [tab,heading] of sections){
     await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:tab,exact:true}).click();

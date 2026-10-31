@@ -1,0 +1,44 @@
+name: "Bug report (privacy-safe)"
+description: "Report a PhiSafe defect with synthetic examples, never real household details."
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Privacy before posting:** GitHub issues are public. Do not upload your household backup (encrypted or plain), pet names, medical records, precise routes, addresses, contacts, passwords, or screenshots showing private records. Reproduce using invented names and data. You may attach an *inspected* privacy-safe pilot summary.
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Affected area"
+      options:
+        - "Guided setup"
+        - "People and animal roster"
+        - "Vehicle loading or rehearsal"
+        - "Backup and encryption"
+        - "Offline access and installation"
+        - "Printing and quick reference"
+        - "Other"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: "How to reproduce with synthetic data"
+      description: "Use dummy names, locations and quantities only."
+      placeholder: "Example: enter 2 demo people, 1 demo dog, then..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected and observed behavior"
+      placeholder: "Expected X; observed Y."
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: "Public issue privacy confirmation"
+      options:
+        - label: "I checked this issue and any attachments for private or identifying household details."
+          required: true

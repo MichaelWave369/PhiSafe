@@ -29,6 +29,8 @@ jobs:
           node --check quick-ui.mjs
           node --check setup.mjs
           node --check setup-ui.mjs
+          node --check pilot.mjs
+          node --check pilot-ui.mjs
           node --check sw.js
       - name: Unit tests
         run: node --test tests/*.test.mjs

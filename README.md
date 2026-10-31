@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.8.0, Rung 8 guided first-run household setup**. Static web app, zero build dependencies, no login, no tracking.
+**v0.9.0, Rung 9 community field pilot & privacy-safe feedback**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -32,6 +32,7 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 9 Community Field Pilot:** install/bookmark help, manual device test checklist, browser capability signals and strictly allowlisted downloadable issue diagnostics; public GitHub bug/suggestion forms explicitly prohibit personal information. No feedback is transmitted automatically.
 - **Rung 8 Guided Setup:** six sequential first-run stages, inline household, pet, route and supply forms, transport links and manual backup confirmation. Existing private plans are untouched; no synthetic household data is seeded.
 - **Rung 7 Emergency Quick View:** always-offline-ready read-only dashboard with household counts, exact animal/carrier/vehicle assignments, saved routes/contacts, potential gaps, and print-ready personal reference card; four static source-attributed hazard reminders (not live alerts).
 - **Rung 6 Private Vault:** optional passphrase-protected portable backup using browser Web Crypto AES-256-GCM and PBKDF2-HMAC-SHA-256 (600,000 iterations); offline local restore with authenticated decryption and explicit overwrite confirmation. Existing plain JSON backups remain supported.
@@ -70,6 +71,7 @@ A Pages workflow deploys on pushes to `main`. In repository **Settings → Pages
 - `vault.mjs`, `vault-ui.mjs`: client-side encrypted file export/restore, with no network backend or stored passphrase.
 - `quick.mjs`, `quick-ui.mjs`: read-only quick reference, source-attributed hazard reference cards and private print view.
 - `setup.mjs`, `setup-ui.mjs`: deterministic onboarding guidance and forms reusing existing schema-one local household data.
+- `pilot.mjs`, `pilot-ui.mjs`: community pilot test tracking, browser install help, privacy-safe diagnostics and optional public issue links.
 - `sw.js`, `manifest.webmanifest`: static offline shell.
 - `tests/core.test.mjs`: core invariants.
 - `.github/workflows/`: tests and Pages deployment.
@@ -208,3 +210,20 @@ A wizard step being recorded is not an evacuation clearance. People can use the 
 - Physical animal capacity, destination acceptance, communication access and a second-device encrypted backup restoration must still be verified in real life.
 
 A new saved edit automatically clears the wizard's manual backup confirmation so a previous copy is never silently treated as current. This does not delete or modify downloaded backups.
+
+
+## Rung 9: Community Field Pilot
+
+Open the **Community Pilot** tab to test PhiSafe in a calm environment before depending on it. It provides manual installation or bookmarking instructions for Android, iOS/iPadOS Safari, desktop Chrome/Edge and browsers without install support. Browsers that expose the `beforeinstallprompt` event may offer an install button; this is optional and cannot guarantee actual installation. The app never installs itself.
+
+Six **self-confirmed test checks** cover installation/bookmarking, real disconnected reopening, household/animal editing, printing, encrypted restore and mobile/keyboard navigation. They are stored under their own small localStorage key (`phisafe-pilot-checks-v1`) separate from the household plan. Clearing them never deletes the plan or encrypted backup. Passing these checks is not a safety certification.
+
+Use **Inspect cached app shell** to check the v9 service-worker assets. A populated cache does not prove offline recovery. Actually reopen PhiSafe with internet disconnected on your own device in calm conditions. Never disable emergency communications during an actual incident.
+
+### Privacy-preserving contributions
+
+**Download safe diagnostic summary** creates an allowlist-only JSON file with the app version, six self-test statuses, and five coarse browser capability fields. It explicitly excludes all household information, pet counts, names, medical records, destinations, coordinates, specific browser/device identifiers, URLs, time stamps and free-text notes. It never includes the actual household state object. The app never uploads or submits this report; users inspect the file and decide whether to attach it to an issue.
+
+The repository now includes privacy-first [bug report](https://github.com/MichaelWave369/PhiSafe/issues/new?template=bug_report.yml) and [feature suggestion](https://github.com/MichaelWave369/PhiSafe/issues/new?template=feature_request.yml) forms. Reports must use **synthetic data** and no personal screenshots, backups or passphrases. A public GitHub issue is visible to others.
+
+This project still does not supply real-time emergency alerts, verified routing, transportation fit or shelter acceptance. Families must follow official instructions and never delay evacuation to complete an app test.
