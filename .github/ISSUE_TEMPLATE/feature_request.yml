@@ -1,0 +1,38 @@
+name: "Feature suggestion (privacy-safe)"
+description: "Share an improvement for PhiSafe without public personal information."
+title: "[Idea] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Protect your household:** This public issue is for generic ideas. No names, addresses, routes, medications, passwords, private screenshots, or household backups. Please use hypothetical examples.
+  - type: textarea
+    id: goal
+    attributes:
+      label: "What would you like PhiSafe to help you do?"
+      placeholder: "A general goal that could help many families..."
+    validations:
+      required: true
+  - type: textarea
+    id: flow
+    attributes:
+      label: "Suggested workflow (synthetic example)"
+      description: "Explain how the feature should work, without personal details."
+    validations:
+      required: false
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: "Principles"
+      options:
+        - label: "The idea can work offline without mandatory accounts or tracking."
+          required: false
+        - label: "The idea respects animal welfare and real-world safety checks."
+          required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: "Public issue privacy confirmation"
+      options:
+        - label: "I removed private information and used only generic or synthetic examples."
+          required: true

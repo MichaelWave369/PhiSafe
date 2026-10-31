@@ -11,6 +11,8 @@ import { guideFor } from "./quick.mjs";
 import { renderQuick, printQuick } from "./quick-ui.mjs";
 import { SETUP_STEPS, isUntouchedPlan, setupReport, mayAddAnimal } from "./setup.mjs";
 import { renderSetup } from "./setup-ui.mjs";
+import {PILOT_STORAGE_KEY,normalizePilot,makePublicPilotReport} from "./pilot.mjs";
+import {renderPilot} from "./pilot-ui.mjs";
 
 const root = document.querySelector("#content");
 const printRoot = document.querySelector("#printReport");
@@ -21,9 +23,55 @@ let targetDays = 14;
 let quickGuide = "wildfire";
 let offlineAuditResult = null;
 let vaultBusy = false;
+let installPrompt = null;
+let pilotChecks = readPilotChecks();
 let state = load();
 if (isUntouchedPlan(state)) tab = "setup";
 
+function readPilotChecks() {
+  try {
+    return normalizePilot(JSON.parse(localStorage.getItem(PILOT_STORAGE_KEY) || "{}"));
+  } catch (_) {
+    return normalizePilot({});
+  }
+}
+function writePilotChecks() {
+  try {
+    localStorage.setItem(PILOT_STORAGE_KEY,JSON.stringify(pilotChecks));
+    clearNotice();
+  } catch (_) {
+    tell("Unable to save pilot checks in this browser. Your household plan was not changed.");
+  }
+  render();
+}
+function pilotEnvironment() {
+  const standalone=Boolean(
+    (typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches) ||
+    navigator.standalone === true
+  );
+  return {
+    secureContext:window.isSecureContext === true,
+    serviceWorkerSupported:"serviceWorker" in navigator,
+    serviceWorkerControlled:Boolean(navigator.serviceWorker?.controller),
+    installed:standalone,
+    promptAvailable:Boolean(installPrompt),
+    cacheAudit:offlineAuditResult?.status||"unverified"
+  };
+}
+function downloadPilotReport() {
+  // Importantly, the report builder never receives `state` or any household data.
+  const report=makePublicPilotReport(pilotChecks,pilotEnvironment());
+  const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;
+  link.download="phisafe-community-pilot-summary.json";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  tell("Privacy-safe pilot summary downloaded. Inspect its contents before sharing.");
+}
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -321,6 +369,7 @@ function render() {
     drill: () => renderDrill(state,helpers),
     field: () => renderField(state,offlineAuditResult,helpers),
     vault: renderVault,
+    pilot: () => renderPilot(pilotChecks,pilotEnvironment(),helpers),
     guides: renderGuides
   };
   root.innerHTML = views[tab]();
@@ -366,6 +415,32 @@ document.addEventListener("click", event => {
   const action = control.dataset.action;
   const key = control.dataset.id;
   if (action === "print") { renderPrint(); window.print(); return; }
+  if (action === "pilot-download") {
+    downloadPilotReport();
+    return;
+  }
+  if (action === "pilot-reset") {
+    if(confirm("Clear only local community pilot test checkboxes? Household plans and backups will stay untouched.")) {
+      pilotChecks=normalizePilot({});
+      try {localStorage.removeItem(PILOT_STORAGE_KEY);} catch(_) {}
+      render();
+    }
+    return;
+  }
+  if (action === "pilot-install") {
+    if(!installPrompt) {tell("Your browser has not offered an installation prompt. Use its menu or home-screen instructions.");return;}
+    const pending=installPrompt;
+    installPrompt=null;
+    try {
+      Promise.resolve(pending.prompt()).then(()=>pending.userChoice).then(choice=>{
+        tell(choice?.outcome==="accepted"
+          ?"Install requested. Verify the app icon and test offline reopening."
+          :"Install prompt dismissed. Manual installation steps remain available.");
+        if(tab==="pilot") render();
+      }).catch(()=>tell("Browser installation prompt failed. Try the browser menu."));
+    } catch(_) {tell("Browser installation prompt failed. Try the browser menu.");}
+    return;
+  }
   if (action === "select-quick-guide") {
     quickGuide=guideFor(control.dataset.guide).id;
     render();
@@ -505,6 +580,15 @@ document.addEventListener("change", event => {
   if (el.dataset.action === "toggle-task") {
     state.tasks[el.dataset.id] = el.checked;
     save();
+  }
+  if (el.dataset.action === "pilot-check") {
+    const key=el.dataset.id;
+    const raw={checks:{...pilotChecks.checks}};
+    if (el.checked) raw.checks[key]=true;
+    else delete raw.checks[key];
+    pilotChecks=normalizePilot(raw);
+    writePilotChecks();
+    return;
   }
   if (el.dataset.action === "setup-backup-review") {
     state.setup.backupReviewedAt = el.checked ? new Date().toISOString() : null;
@@ -742,6 +826,16 @@ document.addEventListener("submit", async event => {
     if(submit)submit.disabled=false;
     vaultBusy=false;
   }
+});
+window.addEventListener("beforeinstallprompt",event=>{
+  event.preventDefault();
+  installPrompt=event;
+  if(tab==="pilot") render();
+});
+window.addEventListener("appinstalled",()=>{
+  installPrompt=null;
+  tell("The browser reported an app installation. Test opening PhiSafe without connectivity.");
+  if(tab==="pilot") render();
 });
 window.addEventListener("online",updateConnection);
 window.addEventListener("offline",updateConnection);

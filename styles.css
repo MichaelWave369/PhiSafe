@@ -98,3 +98,12 @@ table .task input:disabled{cursor:not-allowed;opacity:.5}
 .setup-manual-confirm small{display:block;font-size:.8rem;color:var(--muted);margin-top:5px}
 @media(max-width:760px){.setup-layout{grid-template-columns:1fr}.setup-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.setup-step{padding:10px;min-width:0}.setup-step strong{font-size:.85rem}.setup-index{width:28px;height:28px}}
 @media(max-width:420px){.setup-nav{grid-template-columns:1fr}}
+
+/* Rung 9: opt-in pilot checklist, long helpful text, and small-screen links */
+.pilot-view .pilot-tasks{margin:14px 0}
+.pilot-view .pilot-tasks .task{align-items:flex-start;padding:11px 0}
+.pilot-view .pilot-tasks .task input{flex:none;margin-top:4px}
+.pilot-view .pilot-tasks small{display:block;color:var(--muted);font-size:.85rem;line-height:1.5;margin-top:4px;font-weight:400}
+.pilot-view .kv{overflow-wrap:anywhere}
+.pilot-view .top-actions a{display:inline-block;padding:8px 12px;border:1px solid var(--border);border-radius:10px;overflow-wrap:anywhere}
+@media(max-width:600px){.pilot-view .top-actions{align-items:stretch}.pilot-view .top-actions a{width:100%}}
