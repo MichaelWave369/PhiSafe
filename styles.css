@@ -107,3 +107,18 @@ table .task input:disabled{cursor:not-allowed;opacity:.5}
 .pilot-view .kv{overflow-wrap:anywhere}
 .pilot-view .top-actions a{display:inline-block;padding:8px 12px;border:1px solid var(--border);border-radius:10px;overflow-wrap:anywhere}
 @media(max-width:600px){.pilot-view .top-actions{align-items:stretch}.pilot-view .top-actions a{width:100%}}
+
+/* Rung 10: visibly isolated fictional sandbox; no safety-signaling status color */
+.demo-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+  background:#533b1f;border:2px dashed #efc46f;border-radius:14px;padding:16px;margin:16px 0;
+  color:#fff4d1}
+.demo-banner[hidden]{display:none!important}
+.demo-banner strong,.demo-banner span{display:block}
+.demo-banner span{max-width:630px;font-size:.88rem;line-height:1.55;margin-top:5px}
+.demo-banner .top-actions{flex-wrap:wrap}
+body.demo-active .hero-note{border-left:4px solid #efc46f}
+body.demo-active #content>.card:first-child{outline-offset:4px}
+#demoPrintStamp{border:3px solid #333!important;padding:12px!important;font-weight:bold;
+  font-size:1.1rem;line-height:1.55;text-align:center;break-inside:avoid}
+@media(max-width:680px){.demo-banner,.demo-banner .top-actions{flex-direction:column;align-items:stretch}
+  .demo-banner button{width:100%}}

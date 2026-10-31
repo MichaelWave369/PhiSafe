@@ -13,6 +13,7 @@ import { SETUP_STEPS, isUntouchedPlan, setupReport, mayAddAnimal } from "./setup
 import { renderSetup } from "./setup-ui.mjs";
 import {PILOT_STORAGE_KEY,normalizePilot,makePublicPilotReport} from "./pilot.mjs";
 import {renderPilot} from "./pilot-ui.mjs";
+import {makeDemoState, DEMO_MARKER} from "./demo.mjs";
 
 const root = document.querySelector("#content");
 const printRoot = document.querySelector("#printReport");
@@ -23,6 +24,7 @@ let targetDays = 14;
 let quickGuide = "wildfire";
 let offlineAuditResult = null;
 let vaultBusy = false;
+let demoActive = false;
 let installPrompt = null;
 let pilotChecks = readPilotChecks();
 let state = load();
@@ -98,6 +100,13 @@ function clearNotice() {
   notice.textContent = "";
 }
 function save(preserveSetupBackup = false) {
+  if (demoActive) {
+    // Do not touch persistent household records when exercising fictional data.
+    state.updatedAt=new Date().toISOString();
+    clearNotice();
+    render();
+    return;
+  }
   // Any saved plan changes require a fresh copy; self-confirmations must not stay green
   // while an encrypted file on another device quietly becomes obsolete.
   if (!preserveSetupBackup && state.setup?.backupReviewedAt) state.setup.backupReviewedAt=null;
@@ -111,6 +120,10 @@ function save(preserveSetupBackup = false) {
   render();
 }
 function commitRestoredPlan(replacement) {
+  if (demoActive) {
+    tell("Exit Demo Mode before restoring a private plan. Your existing plan remains unchanged.");
+    return false;
+  }
   // Persist first: failure must not silently replace a working in-memory plan.
   const candidate = normalizeState(replacement);
   candidate.updatedAt = new Date().toISOString();
@@ -321,6 +334,32 @@ function renderGuides() {
       '<p>Export JSON to a secure location, print a copy for offline use, and avoid sharing filled-in exports or printouts publicly. No accounts, analytics, ads, network integrations or location permissions are used.</p>' +
       '<button class="danger small" data-action="reset-all">Delete this device’s PhiSafe plan</button>') + '</div>';
 }
+function stampDemoPrint() {
+  if(!demoActive || printRoot.querySelector("#demoPrintStamp")) return;
+  printRoot.insertAdjacentHTML("afterbegin",
+    '<p class="print-warn" id="demoPrintStamp"><strong>DEMO ONLY — SAMPLE DATA — NOT FOR AN EMERGENCY.</strong> '+
+    'These names, destinations, routes and vehicle allocations are fictional and have not been verified.</p>');
+}
+function startDemo() {
+  if(demoActive) return;
+  demoActive=true;
+  state=makeDemoState();
+  offlineAuditResult=null;
+  setupStep="household";
+  tab="overview";
+  render();
+  tell("Demo Mode active: fictional data only. Edits stay in this tab and disappear when you exit or reload.");
+}
+function exitDemo() {
+  if(!demoActive) return;
+  demoActive=false;
+  state=load(); // Restore current browser plan without touching its stored bytes.
+  offlineAuditResult=null;
+  setupStep="household";
+  tab=isUntouchedPlan(state)?"setup":"overview";
+  render();
+  tell("Demo Mode closed. Your original private browser plan has been restored.");
+}
 function renderPrint() {
   const m = metrics(state, targetDays);
   const h = state.household;
@@ -349,8 +388,12 @@ function renderPrint() {
     '<h2>Action checklist</h2><ul>' + ACTIONS.map(a => entry(state.tasks[a.id] ? "[x]" : "[ ]",a.label)).join("") + '</ul>' +
     '<h2>Inventory</h2><ul>' + (state.supplies.map(s => entry(s.name,fmt(s.quantity)+" / "+fmt(s.goal)+" "+s.unit)).join("") || '<li>No inventory entered</li>') + '</ul>' +
     '<p class="print-warn">Keep this printout private. It may contain names, locations and contact details.</p>';
+  stampDemoPrint();
 }
 function render() {
+  const banner=document.querySelector("#demoBanner");
+  if(banner) banner.hidden=!demoActive;
+  document.body.classList.toggle("demo-active",demoActive);
   document.querySelectorAll("[data-tab]").forEach(button => {
     const selected = button.dataset.tab === tab;
     button.classList.toggle("active", selected);
@@ -384,7 +427,7 @@ function downloadEncryptedBackup(envelope) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href=url;
-  link.download="phisafe-encrypted-"+new Date().toISOString().slice(0,10)+".json";
+  link.download=(demoActive?"phisafe-DEMO-encrypted-":"phisafe-encrypted-")+new Date().toISOString().slice(0,10)+".json";
   document.body.append(link);
   link.click();
   link.remove();
@@ -395,12 +438,12 @@ function exportBackup() {
   const url = URL.createObjectURL(data);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "phisafe-private-backup-" + new Date().toISOString().slice(0,10) + ".json";
+  link.download = (demoActive?"phisafe-DEMO-plain-":"phisafe-private-backup-") + new Date().toISOString().slice(0,10) + ".json";
   document.body.append(link);
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url),1000);
-  tell("Backup downloaded. This file contains private information in plain text. Store it securely.");
+  tell(demoActive?"Fictional demo JSON downloaded. It is NOT a usable emergency plan.":"Backup downloaded. This file contains private information in plain text. Store it securely.");
 }
 document.addEventListener("click", event => {
   const control = event.target.closest("[data-action],[data-tab]");
@@ -415,6 +458,16 @@ document.addEventListener("click", event => {
   const action = control.dataset.action;
   const key = control.dataset.id;
   if (action === "print") { renderPrint(); window.print(); return; }
+  if (action === "demo-start") {startDemo();return;}
+  if (action === "demo-exit") {exitDemo();return;}
+  if (action === "demo-reset") {
+    if(demoActive && confirm("Restart this fictional demo? Unsaved demo edits will disappear; your real plan is untouched.")){
+      state=makeDemoState();
+      render();
+      tell("Fictional demo reset. Your private browser plan remains untouched.");
+    }
+    return;
+  }
   if (action === "pilot-download") {
     downloadPilotReport();
     return;
@@ -448,12 +501,14 @@ document.addEventListener("click", event => {
   }
   if (action === "print-quick") {
     printRoot.innerHTML=printQuick(state,quickGuide,e);
+    stampDemoPrint();
     window.addEventListener("afterprint",renderPrint,{once:true});
     window.print();
     return;
   }
   if (action === "print-field") {
     printRoot.innerHTML = printFieldCard(state,e);
+    stampDemoPrint();
     window.addEventListener("afterprint",renderPrint,{once:true});
     window.print();
     return;
@@ -478,6 +533,7 @@ document.addEventListener("click", event => {
   }
   if (action === "print-loading") {
     printRoot.innerHTML = printLoadingSheet(state,e);
+    stampDemoPrint();
     window.addEventListener("afterprint", renderPrint, {once:true});
     window.print();
     return;
@@ -511,12 +567,16 @@ document.addEventListener("click", event => {
   }
   if (action === "print-manifest") {
     printRoot.innerHTML = manifestPrint(state,e);
+    stampDemoPrint();
     window.addEventListener("afterprint", renderPrint, {once:true});
     window.print();
     return;
   }
   if (action === "export") { exportBackup(); return; }
-  if (action === "import") { document.querySelector("#importFile").click(); return; }
+  if (action === "import") {
+    if(demoActive){tell("Exit Demo Mode before importing a real plan. Your existing plan is untouched.");return;}
+    document.querySelector("#importFile").click();return;
+  }
   if (action === "horizon") { targetDays = Number(control.dataset.days); render(); return; }
   if (action === "setup-step") {
     if (SETUP_STEPS.some(item=>item.id===key)) { setupStep=key; tab="setup"; render(); }
@@ -565,7 +625,9 @@ document.addEventListener("click", event => {
     if (confirm("Reset all loading marks for a fresh drill?")) { state.pets.forEach(x => x.loaded = false); save(); }
     return;
   }
-  if (action === "reset-all" && confirm("Permanently remove this browser’s PhiSafe plan? Export a backup first if needed.")) {
+  if (action === "reset-all") {
+    if(demoActive){tell("Your private plan cannot be erased in Demo Mode. Exit Demo Mode first.");return;}
+    if (!confirm("Permanently remove this browser’s PhiSafe plan? Export a backup first if needed.")) return;
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
     state = defaultState();
     offlineAuditResult = null;
@@ -573,6 +635,7 @@ document.addEventListener("click", event => {
     tab = "setup";
     render();
     tell("This browser’s PhiSafe plan was cleared. Existing downloaded backups were not deleted.");
+    return;
   }
 });
 document.addEventListener("change", event => {
@@ -775,6 +838,11 @@ document.addEventListener("submit", event => {
   }
 });
 document.querySelector("#importFile").addEventListener("change", async event => {
+  if(demoActive) {
+    event.target.value="";
+    tell("Exit Demo Mode before importing a real backup. The stored plan was not modified.");
+    return;
+  }
   const file = event.target.files?.[0];
   event.target.value = "";
   if (!file) return;
@@ -801,8 +869,9 @@ document.addEventListener("submit", async event => {
       if (passphrase !== confirmation) throw new Error("Passphrases do not match.");
       const envelope = await encryptPlan(state,passphrase);
       downloadEncryptedBackup(envelope);
-      tell("Encrypted backup downloaded. Store it securely and test restoring a copy. Your browser-local plan remains unencrypted.");
+      tell(demoActive?"Fictional encrypted demo backup downloaded. It is not a real emergency plan.":"Encrypted backup downloaded. Store it securely and test restoring a copy. Your browser-local plan remains unencrypted.");
     } else {
+      if(demoActive) throw new Error("Exit Demo Mode before restoring an encrypted backup; the real plan is untouched.");
       const file = form.querySelector("#vaultImportFile").files?.[0];
       if (!file) throw new Error("Choose an encrypted PhiSafe backup file.");
       if (file.size>MAX_VAULT_FILE_BYTES) throw new Error("Encrypted backup exceeds the 2 MiB limit.");

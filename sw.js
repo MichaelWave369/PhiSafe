@@ -1,5 +1,5 @@
-const CACHE = "phisafe-shell-v9";
-const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./core.mjs", "./rung2.mjs", "./rung2-ui.mjs", "./rung3.mjs", "./rung3-ui.mjs", "./rung4.mjs", "./rung4-ui.mjs", "./vault.mjs", "./vault-ui.mjs", "./quick.mjs", "./quick-ui.mjs", "./setup.mjs", "./setup-ui.mjs", "./pilot.mjs", "./pilot-ui.mjs", "./manifest.webmanifest", "./icons/shield.svg"];
+const CACHE = "phisafe-shell-v10";
+const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./core.mjs", "./rung2.mjs", "./rung2-ui.mjs", "./rung3.mjs", "./rung3-ui.mjs", "./rung4.mjs", "./rung4-ui.mjs", "./vault.mjs", "./vault-ui.mjs", "./quick.mjs", "./quick-ui.mjs", "./setup.mjs", "./setup-ui.mjs", "./pilot.mjs", "./pilot-ui.mjs", "./demo.mjs", "./manifest.webmanifest", "./icons/shield.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
