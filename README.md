@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.4.0, Rung 4 field readiness and offline cache verification**. Static web app, zero build dependencies, no login, no tracking.
+**v0.5.0, Rung 5 browser field simulation and offline-reload regression coverage**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -16,7 +16,7 @@ Serve the repository with any static server, e.g.:
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000` in a browser. For an installed/offline PWA, use HTTPS deployment such as GitHub Pages and visit the app once while online so the service worker can cache its files. Some browsers do not support installing apps with SVG-only icons; adding PNG icons is a planned improvement. Test offline mode before relying on it.
+Open `http://localhost:8000` in a browser. For an installed/offline PWA, use HTTPS deployment such as GitHub Pages and visit the app once while online so the service worker can cache its files. Localhost is also a secure browser context and can register the service worker for automated offline testing. Some browsers do not support installing apps with SVG-only icons; adding PNG icons is a planned improvement. Test offline mode before relying on it.
 
 To run tests (Node.js 22+):
 
@@ -32,6 +32,7 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 5 browser regression tests:** real headless Chromium desktop/mobile emulation covers navigation, local persistence, synthetic 17-animal assignments, import/export, print render, and disconnected reload with a service worker. Real-device field tests remain required.
 - **Rung 4 field readiness:** essential/important/manual verification gaps, manually date-stamped physical checks, browser cache audit (not proof of real offline function), and a private printable field-reference card.
 - **Rung 3 evacuation practice:** animal-by-animal physical check prompts (located, secured, recounted on arrival), people headcount at boarding and destination, five predeparture prompts, incomplete/complete drill records, and printable private load sheets.
 - **Rung 2 visual evacuation loading planner:** explicit passenger/animal capacity per vehicle, one unique vehicle slot per animal, missing roster warnings, and printable allocation-aware 72-hour manifests.
@@ -127,3 +128,23 @@ The **Offline application file audit** inspects service worker control, browser 
 5. Print the private field card and protect it, including destinations/contact details.
 
 **Never shut off emergency communications during a real incident to run a test.** An app does not know current road closures, actual hazards, shelter availability, or whether a physical vehicle is safe. The field card is a reminder and not a replacement for official instructions. No health, household, or location details have been added to the public repo.
+
+
+## Rung 5 browser checks
+
+PhiSafe's static application still has **zero runtime dependencies**. Playwright is an optional development dependency used only for automated browser testing.
+
+```bash
+npm install
+npx playwright install chromium
+npm run test:unit
+npm run test:browser
+```
+
+The browser suite starts a local HTTP server at `http://127.0.0.1:4173`. Modern browsers treat loopback as a secure context, so the service worker now registers there in addition to HTTPS. Browser tests run in two profiles: desktop Chromium and a mobile-sized Chromium emulation.
+
+Tests include: navigation through each section; household edits with reload persistence; a **synthetic, non-private** 2-person / 8-dog / 9-cat sample roster with 17 distinct declared slots; print manifests; plain-text JSON export/import; and an actual offline page reload with the current cached service-worker shell. The simulated 17-slot layout is purely for code verification and does **not** imply those crates safely fit in any particular vehicle.
+
+GitHub Actions runs the Chromium browser suite and uploads Playwright reports/traces/screenshots **only when a browser job fails**. These synthetic tests intentionally never use real names, addresses or medical records. Do not run real personal plans in CI.
+
+Automated offline behavior proves the test browser can reopen its cached app, **not** that your own phone, RV power, storage, and connectivity have passed a real-world test. Confirm that separately and keep printed backups available.

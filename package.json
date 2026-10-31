@@ -1,0 +1,15 @@
+{
+  "name": "phisafe",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline-first household emergency readiness planner",
+  "scripts": {
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test",
+    "test": "npm run test:unit && npm run test:browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}

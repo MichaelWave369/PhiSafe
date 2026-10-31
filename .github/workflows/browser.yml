@@ -1,0 +1,32 @@
+name: PhiSafe browser field simulation
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install reproducible browser test dependency
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium with runtime libraries
+        run: npx playwright install --with-deps chromium
+      - name: Run Chromium desktop and mobile emulation
+        run: npm run test:browser
+      - name: Upload browser debugging artifacts (failures only)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phisafe-browser-failure-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
