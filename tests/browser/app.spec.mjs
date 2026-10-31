@@ -17,7 +17,8 @@ test("all sections render without browser exceptions and remain usable on narrow
     ["Field Readiness","Field readiness & offline verification"],
     ["Power","Backup power planner"],
     ["72-hour bags","72-hour grab-and-go manifest"],
-    ["Official guides","Trusted guidance"]
+    ["Official guides","Trusted guidance"],
+    ["Encrypted Vault","Private Emergency Vault"]
   ];
   for (const [tab,heading] of sections){
     await page.getByRole("button",{name:tab,exact:true}).click();
@@ -78,7 +79,7 @@ test("private JSON backup can be imported and exported; printable manifest rende
   await page.getByRole("button",{name:"Print 72-hour manifest"}).click();
   expect(await page.locator("#printReport").innerText()).toContain("Test Cat 9");
   const downloadEvent=page.waitForEvent("download");
-  await page.getByRole("button",{name:"Export backup"}).click();
+  await page.getByRole("button",{name:"Export plain JSON"}).click();
   const download=await downloadEvent;
   expect(download.suggestedFilename()).toMatch(/^phisafe-private-backup-/);
   await page.reload();

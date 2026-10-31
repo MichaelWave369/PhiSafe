@@ -5,6 +5,8 @@ import { rehearsalReport, buildRehearsalRecord, newRehearsal } from "./rung3.mjs
 import { renderDrill, printLoadingSheet } from "./rung3-ui.mjs";
 import { assessFieldReadiness, inspectOfflineShell } from "./rung4.mjs";
 import { renderField, printFieldCard } from "./rung4-ui.mjs";
+import { encryptPlan, decryptPlan, isEncryptedBackup, MAX_VAULT_FILE_BYTES } from "./vault.mjs";
+import { renderVault } from "./vault-ui.mjs";
 
 const root = document.querySelector("#content");
 const printRoot = document.querySelector("#printReport");
@@ -12,6 +14,7 @@ const notice = document.querySelector("#appNotice");
 let tab = "overview";
 let targetDays = 14;
 let offlineAuditResult = null;
+let vaultBusy = false;
 let state = load();
 
 function load() {
@@ -48,6 +51,22 @@ function save() {
     tell("Browser storage is unavailable or full. Your edits may disappear when this page closes. Export a backup now.");
   }
   render();
+}
+function commitRestoredPlan(replacement) {
+  // Persist first: failure must not silently replace a working in-memory plan.
+  const candidate = normalizeState(replacement);
+  candidate.updatedAt = new Date().toISOString();
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(candidate));
+  } catch (_) {
+    tell("Unable to save the restored plan on this device. The existing plan was not changed.");
+    return false;
+  }
+  state = candidate;
+  offlineAuditResult = null;
+  tab = "overview";
+  render();
+  return true;
 }
 function newId() {
   return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -289,6 +308,7 @@ function render() {
     bags: () => renderGoBags(state,helpers),
     drill: () => renderDrill(state,helpers),
     field: () => renderField(state,offlineAuditResult,helpers),
+    vault: renderVault,
     guides: renderGuides
   };
   root.innerHTML = views[tab]();
@@ -297,6 +317,17 @@ function render() {
 function updateConnection() {
   const status = document.querySelector("#connectionStatus");
   status.textContent = navigator.onLine ? "Network appears online" : "Network appears offline";
+}
+function downloadEncryptedBackup(envelope) {
+  const blob = new Blob([JSON.stringify(envelope,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href=url;
+  link.download="phisafe-encrypted-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function exportBackup() {
   const data = new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
@@ -590,12 +621,49 @@ document.querySelector("#importFile").addEventListener("change", async event => 
     const parsed = JSON.parse(await file.text());
     const replacement = normalizeState(parsed);
     if (!confirm("Replace this browser’s PhiSafe plan with the selected backup? Export your current plan first if needed.")) return;
-    state = replacement;
-    offlineAuditResult = null;
-    tab = "overview";
-    save();
-    tell("Backup imported successfully. Check quantities, destination details and roster before relying on it.");
+    if (commitRestoredPlan(replacement)) tell("Backup imported successfully. Check quantities, destination details and roster before relying on it.");
   } catch (err) { tell("Import failed: " + (err instanceof Error ? err.message : "Invalid file")); }
+});
+document.addEventListener("submit", async event => {
+  const form = event.target;
+  if (!["vaultExportForm","vaultImportForm"].includes(form.id)) return;
+  event.preventDefault();
+  if (vaultBusy) return;
+  vaultBusy = true;
+  const submit = form.querySelector('[type="submit"]');
+  if(submit) submit.disabled=true;
+  try {
+    if (form.id==="vaultExportForm") {
+      const passphrase = form.querySelector("#vaultExportPassphrase").value;
+      const confirmation = form.querySelector("#vaultConfirmPassphrase").value;
+      if (passphrase !== confirmation) throw new Error("Passphrases do not match.");
+      const envelope = await encryptPlan(state,passphrase);
+      downloadEncryptedBackup(envelope);
+      tell("Encrypted backup downloaded. Store it securely and test restoring a copy. Your browser-local plan remains unencrypted.");
+    } else {
+      const file = form.querySelector("#vaultImportFile").files?.[0];
+      if (!file) throw new Error("Choose an encrypted PhiSafe backup file.");
+      if (file.size>MAX_VAULT_FILE_BYTES) throw new Error("Encrypted backup exceeds the 2 MiB limit.");
+      let envelope;
+      try {envelope=JSON.parse(await file.text());}
+      catch(_) {throw new Error("This file is not valid JSON.");}
+      if (!isEncryptedBackup(envelope)) throw new Error("This is not a PhiSafe encrypted backup. Use the plain JSON importer for old backups.");
+      const passphrase = form.querySelector("#vaultImportPassphrase").value;
+      const restored=await decryptPlan(envelope,passphrase);
+      if (!confirm("Decryption succeeded. Replace this browser's current plan with the recovered plan? Export your existing plan first if needed.")) {
+        tell("Restore cancelled. Existing browser plan was not changed.");
+      } else if (commitRestoredPlan(restored)) {
+        tell("Encrypted backup restored. Verify household counts, contact details and all animal assignments.");
+      }
+    }
+  } catch(error) {
+    tell("Vault: "+(error instanceof Error ? error.message : "Unable to process this backup."));
+  } finally {
+    form.querySelectorAll('input[type="password"]').forEach(input=>{input.value="";});
+    const f=form.querySelector('input[type="file"]');if(f)f.value="";
+    if(submit)submit.disabled=false;
+    vaultBusy=false;
+  }
 });
 window.addEventListener("online",updateConnection);
 window.addEventListener("offline",updateConnection);
