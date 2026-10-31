@@ -17,11 +17,12 @@ export function renderPilot(pilot,env,{e,pill}) {
     '<h2>Community Field Pilot</h2>'+
     '<p class="lead">Help test PhiSafe before a wider release. This is optional. All test confirmations stay in this browser, and sharing a diagnostic summary requires your action.</p>'+
     '<div class="warning-note"><strong>Protect household privacy:</strong> Never attach real household JSON backups, encrypted vaults, passphrases, names, medication lists, addresses, exact routes or screenshots containing private details to a public GitHub issue. Use synthetic information when reporting bugs.</div>'+
-    '<section class="section card"><h3>Explore without private information</h3>
+    `<section class="section card"><h3>Explore without private information</h3>
       <p>A fictional household with two example people, two example dogs and two example cats lets you try the planner, loading cards, printing, offline checks and backup export. No fictional entries are saved over your own plan. Reload or exit to return to your real data.</p>
       <button type="button" data-action="demo-start">Start fictional demo</button>
       <p class="hint">Demo printouts and downloads are clearly marked SAMPLE DATA. Demo mode disables backup restoration and erasing your real plan. It cannot certify a real vehicle or destination.</p>
-    </section><div class="section grid two">'+
+    </section><div class="section grid two">`+
+
       '<section class="card"><h3>Install or bookmark PhiSafe</h3>'+advice+
         '<ul class="clean">'+
           '<li><strong>Android Chrome / Edge:</strong> check the browser menu for Install app or Add to Home screen, when available.</li>'+
