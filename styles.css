@@ -66,3 +66,16 @@ table .task input:disabled{cursor:not-allowed;opacity:.5}
 /* Rung 6: vault passphrase fields */
 #vaultExportForm input,#vaultImportForm input{max-width:100%}
 #vaultExportForm .hint,#vaultImportForm .hint{overflow-wrap:anywhere}
+
+/* Rung 7: high-pressure readability without misleading status greens */
+.quick-view .quick-heading{margin:0 0 14px}
+.quick-view h2{font-size:clamp(1.8rem,4vw,2.65rem)}
+.quick-view .quick-banner{font-size:1rem;line-height:1.6}
+.quick-view .quick-stat strong{font-size:clamp(2rem,5vw,3.3rem);font-variant-numeric:tabular-nums}
+.quick-view .quick-guide-picker{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px}
+.quick-view .quick-selected{border-color:var(--teal);background:#25453e;color:#f0fffb}
+.quick-view .quick-kv{border-bottom:1px solid var(--border);padding-bottom:8px;align-items:start}
+.quick-view .quick-kv strong{overflow-wrap:anywhere;max-width:60%}
+.quick-table small{display:block;color:var(--muted);font-size:.75rem}
+.quick-number{font-variant-numeric:tabular-nums}
+@media(max-width:580px){.quick-view .quick-kv{flex-direction:column;gap:4px}.quick-view .quick-kv strong{max-width:100%;text-align:left}.quick-view .quick-heading button{width:100%}}
