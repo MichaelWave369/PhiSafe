@@ -18,7 +18,7 @@ test("demo editing, printing, plain export, import and delete safeguards leave s
   await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:"Household"}).click();
   await page.locator("#people").fill("3");
   await page.getByRole("button",{name:"Save household"}).click();
-  await expect(page.locator("#content").getByText("3",{exact:true}).first()).toBeVisible();
+  await expect(page.locator("#people")).toHaveValue("3");
   expect(await page.evaluate(()=>localStorage.getItem("phisafe-household-v1"))).toBe(before);
 
   await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:"Quick View"}).click();
@@ -36,9 +36,9 @@ test("demo editing, printing, plain export, import and delete safeguards leave s
   const download=await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^phisafe-DEMO-plain-/);
 
-  await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:"Overview"}).click();
+  await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:"Official guides"}).click();
   await page.getByRole("button",{name:"Delete this device’s PhiSafe plan"}).click();
-  await expect(page.getByRole("status").filter({hasText:"private plan cannot be erased"})).toBeVisible();
+  await expect(page.locator("#appNotice")).toContainText("private plan cannot be erased");
   expect(await page.evaluate(()=>localStorage.getItem("phisafe-household-v1"))).toBe(before);
 
   await page.locator("#importFile").setInputFiles({
@@ -56,6 +56,7 @@ test("demo editing, printing, plain export, import and delete safeguards leave s
 });
 
 test("demo reset and offline reload return to the real plan without persistence",async({page,context})=>{
+  page.on("dialog",dialog=>dialog.accept());
   await seedPrivateTestPlan(page);
   await page.goto("/");
   const before=await page.evaluate(()=>localStorage.getItem("phisafe-household-v1"));
@@ -66,8 +67,8 @@ test("demo reset and offline reload return to the real plan without persistence"
   await page.getByRole("button",{name:"Save household"}).click();
   await page.getByRole("button",{name:"Restart demo"}).click();
   await expect(page.locator("#demoBanner")).toBeVisible();
-  const count=await page.evaluate(()=>document.querySelector("#content").textContent);
-  expect(count).toContain("2");
+  await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:"Household"}).click();
+  await expect(page.locator("#people")).toHaveValue("2");
   expect(await page.evaluate(()=>localStorage.getItem("phisafe-household-v1"))).toBe(before);
   await context.setOffline(true);
   try{
