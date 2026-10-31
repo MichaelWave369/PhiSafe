@@ -601,7 +601,7 @@ window.addEventListener("online",updateConnection);
 window.addEventListener("offline",updateConnection);
 updateConnection();
 render();
-if ("serviceWorker" in navigator && location.protocol === "https:") {
+if ("serviceWorker" in navigator && window.isSecureContext) {
   navigator.serviceWorker.register("./sw.js").catch(() => {
     tell("Offline caching could not be enabled. Print or export your plan before disconnecting.");
   });
