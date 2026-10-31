@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.5.0, Rung 5 browser field simulation and offline-reload regression coverage**. Static web app, zero build dependencies, no login, no tracking.
+**v0.6.0, Rung 6 private encrypted backup vault**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -32,6 +32,7 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 6 Private Vault:** optional passphrase-protected portable backup using browser Web Crypto AES-256-GCM and PBKDF2-HMAC-SHA-256 (600,000 iterations); offline local restore with authenticated decryption and explicit overwrite confirmation. Existing plain JSON backups remain supported.
 - **Rung 5 browser regression tests:** real headless Chromium desktop/mobile emulation covers navigation, local persistence, synthetic 17-animal assignments, import/export, print render, and disconnected reload with a service worker. Real-device field tests remain required.
 - **Rung 4 field readiness:** essential/important/manual verification gaps, manually date-stamped physical checks, browser cache audit (not proof of real offline function), and a private printable field-reference card.
 - **Rung 3 evacuation practice:** animal-by-animal physical check prompts (located, secured, recounted on arrival), people headcount at boarding and destination, five predeparture prompts, incomplete/complete drill records, and printable private load sheets.
@@ -64,6 +65,7 @@ A Pages workflow deploys on pushes to `main`. In repository **Settings → Pages
 - `rung2-ui.mjs`: evacuation loading, power and go-bag view rendering.
 - `rung3.mjs`, `rung3-ui.mjs`: local-only practice state, validation and printable vehicle assignment sheet.
 - `rung4.mjs`, `rung4-ui.mjs`: advisory readiness gaps, manual field checks, browser cache audit and printable reference card.
+- `vault.mjs`, `vault-ui.mjs`: client-side encrypted file export/restore, with no network backend or stored passphrase.
 - `sw.js`, `manifest.webmanifest`: static offline shell.
 - `tests/core.test.mjs`: core invariants.
 - `.github/workflows/`: tests and Pages deployment.
@@ -148,3 +150,20 @@ Tests include: navigation through each section; household edits with reload pers
 GitHub Actions runs the Chromium browser suite and uploads Playwright reports/traces/screenshots **only when a browser job fails**. These synthetic tests intentionally never use real names, addresses or medical records. Do not run real personal plans in CI.
 
 Automated offline behavior proves the test browser can reopen its cached app, **not** that your own phone, RV power, storage, and connectivity have passed a real-world test. Confirm that separately and keep printed backups available.
+
+
+## Rung 6: encrypted emergency vault
+
+PhiSafe can download a password-protected, portable JSON backup. Under **Encrypted Vault**, enter and confirm a long, unique passphrase to save a new encrypted file, or select an existing encrypted file and enter its passphrase to restore to another browser or device. All cryptography runs locally in a secure browser context (HTTPS or localhost); no data is uploaded and no account is required.
+
+**Security boundaries:**
+- **Only the downloaded vault backup file is encrypted.** Active household records remain in regular browser local storage in plaintext, as in prior releases. Physical access to an unlocked device, untrusted extensions or malicious same-origin scripts can still expose the live plan.
+- A lost passphrase cannot be recovered by PhiSafe. Keep it separate from backup files in a secure password manager or suitable offline recovery method. Prefer long, unique phrases, not reused account passwords.
+- Implementation: AES-256-GCM with a **fresh 96-bit IV** and **128-bit salt** on each export; PBKDF2 with HMAC-SHA-256 at **600,000 iterations**. Parameters are stored openly; names, routes, animal data and other plan contents are inside the authenticated ciphertext.
+- Export size capped at 1 MiB plaintext, import capped at 2 MiB file size, and untrusted KDF iteration counts are bounded. Incorrect passphrases, damaged ciphertext and invalid envelope formats fail without replacing the existing plan.
+- Once decryption succeeds, replacement requires an explicit confirmation. Storage is written **before** the live plan is swapped; if the browser refuses storage, existing records are retained.
+- An encrypted file's confidentiality depends on passphrase strength and device security. This implementation has **not received an independent security audit**. The encryption interface may be unavailable on unsupported/insecure browsers.
+- Existing **plain JSON** export/import remains available and is **not encrypted**. Its buttons are labeled explicitly to avoid accidental sharing.
+- A backup is not synchronization. After major plan edits, create a fresh encrypted backup; separately test restoring it. Keep a private printed emergency plan for a complete electronics failure.
+
+See [OWASP's password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) for the PBKDF2 work factor and [MDN Web Crypto](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) for secure-context requirements.

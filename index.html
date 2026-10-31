@@ -23,8 +23,8 @@
       <div class="top-actions">
         <span class="status-pill" id="connectionStatus" role="status">Checking connection</span>
         <button class="secondary small" type="button" data-action="print">Print plan</button>
-        <button class="secondary small" type="button" data-action="export">Export backup</button>
-        <button class="secondary small" type="button" data-action="import">Import backup</button>
+        <button class="secondary small" type="button" data-action="export">Export plain JSON</button>
+        <button class="secondary small" type="button" data-action="import">Import plain JSON</button>
         <input id="importFile" type="file" accept="application/json,.json" hidden>
       </div>
     </header>
@@ -46,12 +46,13 @@
       <button type="button" data-tab="power">Power</button>
       <button type="button" data-tab="bags">72-hour bags</button>
       <button type="button" data-tab="guides">Official guides</button>
+      <button type="button" data-tab="vault">Encrypted Vault</button>
     </nav>
     <div class="notice" id="appNotice" hidden role="status"></div>
     <main id="content" tabindex="-1"></main>
     <footer>
-      <span>PhiSafe v0.5.0 · Local-first · MIT</span>
-      <span>Stored in this browser, not encrypted. Back up responsibly.</span>
+      <span>PhiSafe v0.6.0 · Local-first · MIT</span>
+      <span>Browser storage is not encrypted. Vault exports are encrypted.</span>
     </footer>
   </div>
   <div id="printReport" class="print-only" aria-hidden="true"></div>

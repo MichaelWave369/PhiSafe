@@ -23,6 +23,8 @@ jobs:
           node --check rung3-ui.mjs
           node --check rung4.mjs
           node --check rung4-ui.mjs
+          node --check vault.mjs
+          node --check vault-ui.mjs
           node --check sw.js
       - name: Unit tests
         run: node --test tests/*.test.mjs
