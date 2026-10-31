@@ -14,6 +14,7 @@ test("pilot checklist and privacy-safe diagnostic survive offline reload without
   await page.locator('[data-action="pilot-check"][data-id="offline"]').check();
   await page.locator('[data-action="pilot-check"][data-id="roster"]').check();
   await expect(page.getByText("2 / 6 self-confirmed")).toBeVisible();
+  await page.waitForFunction(()=>Boolean(navigator.serviceWorker?.controller),null,{timeout:20_000});
   await page.getByRole("button",{name:"Inspect cached app shell"}).click();
   await expect(page.locator(".pilot-view .kv").last()).toContainText("cached",{timeout:15_000});
   const pending=page.waitForEvent("download");
