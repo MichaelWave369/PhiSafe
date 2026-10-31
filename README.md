@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.9.0, Rung 9 community field pilot & privacy-safe feedback**. Static web app, zero build dependencies, no login, no tracking.
+**v0.10.0, Rung 10 isolated community demo mode**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -32,6 +32,7 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 10 Isolated Demo:** launch a fictional 2-person/4-animal scenario in memory, explore features and print visibly labeled SAMPLE DATA sheets, then exit or reload to recover the actual local plan. Demo forms never persist over private records, and import/reset guards prevent accidental loss.
 - **Rung 9 Community Field Pilot:** install/bookmark help, manual device test checklist, browser capability signals and strictly allowlisted downloadable issue diagnostics; public GitHub bug/suggestion forms explicitly prohibit personal information. No feedback is transmitted automatically.
 - **Rung 8 Guided Setup:** six sequential first-run stages, inline household, pet, route and supply forms, transport links and manual backup confirmation. Existing private plans are untouched; no synthetic household data is seeded.
 - **Rung 7 Emergency Quick View:** always-offline-ready read-only dashboard with household counts, exact animal/carrier/vehicle assignments, saved routes/contacts, potential gaps, and print-ready personal reference card; four static source-attributed hazard reminders (not live alerts).
@@ -72,6 +73,7 @@ A Pages workflow deploys on pushes to `main`. In repository **Settings → Pages
 - `quick.mjs`, `quick-ui.mjs`: read-only quick reference, source-attributed hazard reference cards and private print view.
 - `setup.mjs`, `setup-ui.mjs`: deterministic onboarding guidance and forms reusing existing schema-one local household data.
 - `pilot.mjs`, `pilot-ui.mjs`: community pilot test tracking, browser install help, privacy-safe diagnostics and optional public issue links.
+- `demo.mjs`: deterministic fictional household data for a memory-only sandbox; no real contacts, places or personally identifying information.
 - `sw.js`, `manifest.webmanifest`: static offline shell.
 - `tests/core.test.mjs`: core invariants.
 - `.github/workflows/`: tests and Pages deployment.
@@ -227,3 +229,23 @@ Use **Inspect cached app shell** to check the v9 service-worker assets. A popula
 The repository now includes privacy-first [bug report](https://github.com/MichaelWave369/PhiSafe/issues/new?template=bug_report.yml) and [feature suggestion](https://github.com/MichaelWave369/PhiSafe/issues/new?template=feature_request.yml) forms. Reports must use **synthetic data** and no personal screenshots, backups or passphrases. A public GitHub issue is visible to others.
 
 This project still does not supply real-time emergency alerts, verified routing, transportation fit or shelter acceptance. Families must follow official instructions and never delay evacuation to complete an app test.
+
+
+## Rung 10: Explore the fictional demo, never risk a real plan
+
+**Try Demo** is available in the header and **Community Pilot** tab. The demo contains only four **fictional** animals (two dogs and two cats), two example people, fabricated destination notes, a fake vehicle, and sample supplies. Its numbers are illustrative, **not** animal restraint, legal capacity, evacuation timing, or water/food recommendations.
+
+The demo workspace is isolated in memory from the real plan stored in `phisafe-household-v1`. You can modify counts, carriers, vehicles, supplies and tasks inside the demo; the ordinary Save action updates the visible fictional workspace but **never writes that data to the real localStorage key**. The existing plan remains unchanged. **Exit demo** reads the current saved plan afresh, and a page reload also exits the demo automatically. Changes to the demo disappear on exit/reload.
+
+Demo prints include a prominent **DEMO ONLY — SAMPLE DATA** warning, including loading sheets, quick cards, field cards and manifests. Downloaded plaintext/encrypted demo filenames are labeled `phisafe-DEMO-...`. They are not suitable real emergency plans. Backup import, encrypted restore and **Delete this device's plan** are blocked while the demo is active; exit the demo first to work with real information. A demo backup *export* can be used to test download/encryption but never contains actual household details.
+
+The Community Pilot privacy-safe diagnostic summary remains distinct from both the real plan and fictional demo. It reports only the allowlisted statuses from Rung 9. No demo data or private data is transmitted automatically.
+
+### Rung 10 acceptance checklist
+
+- Starting a demo does not change the real plan, even if it contains two people and seventeen individually assigned animals.
+- Editing demo household counts and animal/vehicle records leaves the real localStorage bytes untouched.
+- Resetting, importing, and restoring real records are blocked in demo mode; exiting restores current real data.
+- Reload during the demo restores the actual plan rather than resuming a confusing fake emergency.
+- All demo print views visibly warn that the scenario is **SAMPLE DATA ONLY**, and exported demo backups have labeled filenames.
+- Browser CI passes on desktop/mobile, including a disconnected session; real-device QA and animal transportation validation remain separate.

@@ -22,6 +22,7 @@
       </div>
       <div class="top-actions">
         <span class="status-pill" id="connectionStatus" role="status">Checking connection</span>
+        <button class="secondary small" type="button" data-action="demo-start">Try Demo</button>
         <button class="secondary small" type="button" data-tab="setup">Guided Setup</button>
         <button class="secondary small" type="button" data-tab="quick">Quick Reference</button>
         <button class="secondary small" type="button" data-action="print">Print plan</button>
@@ -53,10 +54,19 @@
       <button type="button" data-tab="vault">Encrypted Vault</button>
       <button type="button" data-tab="pilot">Community Pilot</button>
     </nav>
+    <div id="demoBanner" class="demo-banner" role="status" hidden>
+      <div><strong>DEMO MODE · SAMPLE DATA ONLY</strong>
+        <span>All names, destinations, routes, vehicle spaces and supplies are fictional. Demo changes are never saved over your private plan.</span>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="secondary small" data-action="demo-reset">Restart demo</button>
+        <button type="button" data-action="demo-exit">Exit demo and restore my plan</button>
+      </div>
+    </div>
     <div class="notice" id="appNotice" hidden role="status"></div>
     <main id="content" tabindex="-1"></main>
     <footer>
-      <span>PhiSafe v0.9.0 · Local-first · MIT</span>
+      <span>PhiSafe v0.10.0 · Local-first · MIT</span>
       <span>Browser storage is not encrypted. Vault exports are encrypted.</span>
     </footer>
   </div>
