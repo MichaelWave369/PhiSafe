@@ -9,16 +9,20 @@ import { encryptPlan, decryptPlan, isEncryptedBackup, MAX_VAULT_FILE_BYTES } fro
 import { renderVault } from "./vault-ui.mjs";
 import { guideFor } from "./quick.mjs";
 import { renderQuick, printQuick } from "./quick-ui.mjs";
+import { SETUP_STEPS, isUntouchedPlan, setupReport, mayAddAnimal } from "./setup.mjs";
+import { renderSetup } from "./setup-ui.mjs";
 
 const root = document.querySelector("#content");
 const printRoot = document.querySelector("#printReport");
 const notice = document.querySelector("#appNotice");
 let tab = "overview";
+let setupStep = "household";
 let targetDays = 14;
 let quickGuide = "wildfire";
 let offlineAuditResult = null;
 let vaultBusy = false;
 let state = load();
+if (isUntouchedPlan(state)) tab = "setup";
 
 function load() {
   try {
@@ -45,7 +49,10 @@ function clearNotice() {
   notice.hidden = true;
   notice.textContent = "";
 }
-function save() {
+function save(preserveSetupBackup = false) {
+  // Any saved plan changes require a fresh copy; self-confirmations must not stay green
+  // while an encrypted file on another device quietly becomes obsolete.
+  if (!preserveSetupBackup && state.setup?.backupReviewedAt) state.setup.backupReviewedAt=null;
   state.updatedAt = new Date().toISOString();
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -304,7 +311,8 @@ function render() {
   });
   const helpers = {e,fmt,stat,pill};
   const views = {
-    overview: renderOverview, quick: () => renderQuick(state,quickGuide,helpers),
+    overview: renderOverview, setup: () => renderSetup(state,setupStep,helpers),
+    quick: () => renderQuick(state,quickGuide,helpers),
     household: renderHousehold, supplies: renderSupplies,
     animals: renderAnimals, evacuation: renderEvacuation,
     loading: () => renderLoading(state,helpers),
@@ -350,6 +358,7 @@ document.addEventListener("click", event => {
   if (!control) return;
   if (control.dataset.tab) {
     tab = control.dataset.tab;
+    if (tab === "setup") setupStep = setupReport(state).nextStep;
     render();
     root.focus({preventScroll:true});
     return;
@@ -434,6 +443,17 @@ document.addEventListener("click", event => {
   if (action === "export") { exportBackup(); return; }
   if (action === "import") { document.querySelector("#importFile").click(); return; }
   if (action === "horizon") { targetDays = Number(control.dataset.days); render(); return; }
+  if (action === "setup-step") {
+    if (SETUP_STEPS.some(item=>item.id===key)) { setupStep=key; tab="setup"; render(); }
+    return;
+  }
+  if (action === "setup-next") {
+    const at=SETUP_STEPS.findIndex(item=>item.id===setupStep);
+    setupStep=SETUP_STEPS[(at+1)%SETUP_STEPS.length].id;
+    tab="setup";
+    render();
+    return;
+  }
   if (action === "delete-supply") {
     const item = state.supplies.find(x => x.id === key);
     if (item && confirm("Remove " + item.name + " from inventory?")) { state.supplies = state.supplies.filter(x => x.id !== key); save(); }
@@ -474,7 +494,8 @@ document.addEventListener("click", event => {
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
     state = defaultState();
     offlineAuditResult = null;
-    tab = "overview";
+    setupStep = "household";
+    tab = "setup";
     render();
     tell("This browser’s PhiSafe plan was cleared. Existing downloaded backups were not deleted.");
   }
@@ -484,6 +505,12 @@ document.addEventListener("change", event => {
   if (el.dataset.action === "toggle-task") {
     state.tasks[el.dataset.id] = el.checked;
     save();
+  }
+  if (el.dataset.action === "setup-backup-review") {
+    state.setup.backupReviewedAt = el.checked ? new Date().toISOString() : null;
+    state = normalizeState(state);
+    save(true);
+    return;
   }
   if (el.dataset.action === "field-verify") {
     if (el.checked) state.field.checks[el.dataset.id]=new Date().toISOString();
@@ -552,9 +579,45 @@ document.addEventListener("change", event => {
 document.addEventListener("submit", event => {
   const form = event.target;
   const id = form.id || form.dataset.form;
-  if (!["householdForm","supplyForm","petForm","planForm","vehicleAddForm","edit-vehicle","powerSettingsForm","powerDeviceForm","drillPeopleForm","fieldNotesForm"].includes(id)) return;
+  if (!["householdForm","supplyForm","petForm","planForm","vehicleAddForm","edit-vehicle","powerSettingsForm","powerDeviceForm","drillPeopleForm","fieldNotesForm","setupHouseholdForm","setupAnimalForm","setupDestinationForm","setupEssentialsForm"].includes(id)) return;
   event.preventDefault();
   const data = Object.fromEntries(new FormData(form).entries());
+  if (id === "setupHouseholdForm") {
+    const next=structuredClone(state);
+    for(const key of ["people","dogs","cats","otherPets"]) next.household[key]=data[key];
+    state=normalizeState(next);
+    setupStep="animals";tab="setup";save();
+    return;
+  }
+  if (id === "setupAnimalForm") {
+    const next=structuredClone(state);
+    if (!mayAddAnimal(next,data.species)) {
+      tell("This species count is already filled. Adjust household totals or review the existing roster.");
+      return;
+    }
+    const name=String(data.name||"").trim();
+    const carrier=String(data.carrier||"").trim();
+    if(!name||!carrier) {tell("Enter the animal's name and a real carrier or restraint identifier.");return;}
+    next.pets.push({id:newId(),name,species:data.species,carrier,notes:"",loaded:false});
+    state=normalizeState(next);
+    setupStep="animals";tab="setup";save();
+    return;
+  }
+  if (id === "setupDestinationForm") {
+    const next=structuredClone(state);
+    for(const key of ["meetingPlace","backupPlace","routeA","routeB","emergencyContact"]) next.plan[key]=data[key];
+    state=normalizeState(next);
+    setupStep="essentials";tab="setup";save();
+    return;
+  }
+  if (id === "setupEssentialsForm") {
+    const next=structuredClone(state);
+    for(const key of ["humanWaterGallons","animalWaterDailyGallons","animalWaterGallons",
+      "peopleFoodDays","dogFoodDays","catFoodDays","otherPetsFoodDays","medsDays"]) next.household[key]=data[key];
+    state=normalizeState(next);
+    setupStep="backup";tab="setup";save();
+    return;
+  }
   if (form.id === "householdForm") {
     const next = structuredClone(state);
     for (const key of Object.keys(next.household)) next.household[key] = data[key];

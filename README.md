@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.7.0, Rung 7 read-only emergency quick reference**. Static web app, zero build dependencies, no login, no tracking.
+**v0.8.0, Rung 8 guided first-run household setup**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -32,6 +32,7 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 8 Guided Setup:** six sequential first-run stages, inline household, pet, route and supply forms, transport links and manual backup confirmation. Existing private plans are untouched; no synthetic household data is seeded.
 - **Rung 7 Emergency Quick View:** always-offline-ready read-only dashboard with household counts, exact animal/carrier/vehicle assignments, saved routes/contacts, potential gaps, and print-ready personal reference card; four static source-attributed hazard reminders (not live alerts).
 - **Rung 6 Private Vault:** optional passphrase-protected portable backup using browser Web Crypto AES-256-GCM and PBKDF2-HMAC-SHA-256 (600,000 iterations); offline local restore with authenticated decryption and explicit overwrite confirmation. Existing plain JSON backups remain supported.
 - **Rung 5 browser regression tests:** real headless Chromium desktop/mobile emulation covers navigation, local persistence, synthetic 17-animal assignments, import/export, print render, and disconnected reload with a service worker. Real-device field tests remain required.
@@ -68,6 +69,7 @@ A Pages workflow deploys on pushes to `main`. In repository **Settings → Pages
 - `rung4.mjs`, `rung4-ui.mjs`: advisory readiness gaps, manual field checks, browser cache audit and printable reference card.
 - `vault.mjs`, `vault-ui.mjs`: client-side encrypted file export/restore, with no network backend or stored passphrase.
 - `quick.mjs`, `quick-ui.mjs`: read-only quick reference, source-attributed hazard reference cards and private print view.
+- `setup.mjs`, `setup-ui.mjs`: deterministic onboarding guidance and forms reusing existing schema-one local household data.
 - `sw.js`, `manifest.webmanifest`: static offline shell.
 - `tests/core.test.mjs`: core invariants.
 - `.github/workflows/`: tests and Pages deployment.
@@ -181,3 +183,28 @@ Quick View is a **read-only**, accessible reference for high-pressure situations
 - A printable private quick card with every animal separately listed and blank depart/arrive headcount boxes. It may span multiple pages for large households. Print the full dedicated loading sheet for more details.
 
 **Critical:** Never delay an evacuation to use this feature. Comply with official local alerts, verify real-time roads and destination availability when possible, and do not let a green screen replace physical headcounts. Plain browser-local records and printouts are not encrypted. Quick View never writes to persistent household data; selecting a hazard only changes the current display.
+
+
+## Rung 8: guided setup for real households
+
+New untouched browser profiles open **Guided Setup** automatically; an existing plan opens the previous Overview without interruption. People can reopen Guided Setup from the header or navigation at any time. The six steps are:
+
+1. **Household**: enter people and species counts. No pets are invented, and changing a count never silently deletes existing roster entries.
+2. **Individual animals**: add real names and carrier assignments one at a time, constrained by declared species totals. Existing animals may be edited in the full Animals tab.
+3. **Transport**: review declared passenger and animal-slot counts, then open the existing Loading planner. Every declared slot needs real-world physical verification.
+4. **Destinations**: record two distinct *personally confirmed* destinations, two planned routes, and an optional private emergency contact.
+5. **Three-day essentials**: enter actual water, food and medication reserves; no animal water requirement is guessed. Open full inventory for detailed supplies.
+6. **Offline copies**: print emergency documents and generate an encrypted backup. The final checkbox is **self-reported**, not a file audit or independent proof of restore.
+
+A wizard step being recorded is not an evacuation clearance. People can use the full tools at any point, and the overview and quick reference remain available throughout. The wizard never logs private plan data to GitHub, sends records to a server, or auto-selects a shelter. Browser localStorage is still plaintext; exported vault files are encrypted.
+
+### Rung 8 acceptance
+
+- Fresh browser opens setup with zero people and animals. No placeholders or private data.
+- A new 2-person/8-dog/9-cat plan is entered one animal at a time without duplication or exceeding declared species counts.
+- Reloads retain counts, individual animals, routes, supply estimates and self-reported backup confirmation.
+- A preexisting Rung 7 browser plan and an older schema-1 JSON import open normally, with no setup overwrite or mandatory migration.
+- Mobile Chromium and offline reload function with the v8 service-worker cache.
+- Physical animal capacity, destination acceptance, communication access and a second-device encrypted backup restoration must still be verified in real life.
+
+A new saved edit automatically clears the wizard's manual backup confirmation so a previous copy is never silently treated as current. This does not delete or modify downloaded backups.

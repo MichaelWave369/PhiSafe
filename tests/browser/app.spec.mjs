@@ -8,6 +8,7 @@ test("all sections render without browser exceptions and remain usable on narrow
   await expect(page.getByRole("heading",{name:"Prepared, not afraid."})).toBeVisible();
   const sections=[
     ["Overview","Your household readiness"],
+    ["Guided Setup","Guided household setup"],
     ["Quick View","Emergency Quick View"],
     ["Household","Household & capacity"],
     ["Supplies","Supplies inventory"],
@@ -22,7 +23,7 @@ test("all sections render without browser exceptions and remain usable on narrow
     ["Encrypted Vault","Private Emergency Vault"]
   ];
   for (const [tab,heading] of sections){
-    await page.getByRole("button",{name:tab,exact:true}).click();
+    await page.getByRole("navigation",{name:"PhiSafe sections"}).getByRole("button",{name:tab,exact:true}).click();
     await expect(page.getByRole("heading",{name:heading,exact:true})).toBeVisible();
   }
   expect(errors).toEqual([]);
