@@ -39,10 +39,10 @@ test("edits a household and one pet, then restores browser-local data after relo
   await page.locator("#petSpecies").selectOption("dog");
   await page.locator("#petCarrier").fill("Test crate A");
   await page.getByRole("button",{name:"Add animal"}).click();
-  await expect(page.getByText("Synthetic dog")).toBeVisible();
+  await expect(page.locator("#content").getByText("Synthetic dog")).toBeVisible();
   await page.reload();
   await page.getByRole("button",{name:"Animals",exact:true}).click();
-  await expect(page.getByText("Synthetic dog")).toBeVisible();
+  await expect(page.locator("#content").getByText("Synthetic dog")).toBeVisible();
   const state = await page.evaluate(()=>JSON.parse(localStorage.getItem("phisafe-household-v1")));
   expect(state.household.people).toBe(2);
   expect(state.pets).toHaveLength(1);
@@ -83,7 +83,7 @@ test("private JSON backup can be imported and exported; printable manifest rende
   expect(download.suggestedFilename()).toMatch(/^phisafe-private-backup-/);
   await page.reload();
   await page.getByRole("button",{name:"Animals",exact:true}).click();
-  await expect(page.getByText("Test Cat 9")).toBeVisible();
+  await expect(page.locator("#content").getByText("Test Cat 9")).toBeVisible();
 });
 
 test("offline reload serves app shell and persisted plan from cached files",async({page,context})=>{
@@ -101,7 +101,7 @@ test("offline reload serves app shell and persisted plan from cached files",asyn
     await page.reload({waitUntil:"domcontentloaded"});
     await expect(page.getByRole("heading",{name:"Prepared, not afraid."})).toBeVisible();
     await page.getByRole("button",{name:"Animals",exact:true}).click();
-    await expect(page.getByText("Test Cat 9")).toBeVisible();
+    await expect(page.locator("#content").getByText("Test Cat 9")).toBeVisible();
     await page.getByRole("button",{name:"Field Readiness",exact:true}).click();
     await expect(page.getByRole("heading",{name:"Field readiness & offline verification"})).toBeVisible();
   } finally {
