@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.6.0, Rung 6 private encrypted backup vault**. Static web app, zero build dependencies, no login, no tracking.
+**v0.7.0, Rung 7 read-only emergency quick reference**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -32,6 +32,7 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 7 Emergency Quick View:** always-offline-ready read-only dashboard with household counts, exact animal/carrier/vehicle assignments, saved routes/contacts, potential gaps, and print-ready personal reference card; four static source-attributed hazard reminders (not live alerts).
 - **Rung 6 Private Vault:** optional passphrase-protected portable backup using browser Web Crypto AES-256-GCM and PBKDF2-HMAC-SHA-256 (600,000 iterations); offline local restore with authenticated decryption and explicit overwrite confirmation. Existing plain JSON backups remain supported.
 - **Rung 5 browser regression tests:** real headless Chromium desktop/mobile emulation covers navigation, local persistence, synthetic 17-animal assignments, import/export, print render, and disconnected reload with a service worker. Real-device field tests remain required.
 - **Rung 4 field readiness:** essential/important/manual verification gaps, manually date-stamped physical checks, browser cache audit (not proof of real offline function), and a private printable field-reference card.
@@ -66,6 +67,7 @@ A Pages workflow deploys on pushes to `main`. In repository **Settings → Pages
 - `rung3.mjs`, `rung3-ui.mjs`: local-only practice state, validation and printable vehicle assignment sheet.
 - `rung4.mjs`, `rung4-ui.mjs`: advisory readiness gaps, manual field checks, browser cache audit and printable reference card.
 - `vault.mjs`, `vault-ui.mjs`: client-side encrypted file export/restore, with no network backend or stored passphrase.
+- `quick.mjs`, `quick-ui.mjs`: read-only quick reference, source-attributed hazard reference cards and private print view.
 - `sw.js`, `manifest.webmanifest`: static offline shell.
 - `tests/core.test.mjs`: core invariants.
 - `.github/workflows/`: tests and Pages deployment.
@@ -167,3 +169,15 @@ PhiSafe can download a password-protected, portable JSON backup. Under **Encrypt
 - A backup is not synchronization. After major plan edits, create a fresh encrypted backup; separately test restoring it. Keep a private printed emergency plan for a complete electronics failure.
 
 See [OWASP's password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) for the PBKDF2 work factor and [MDN Web Crypto](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) for secure-context requirements.
+
+
+## Rung 7: Emergency Quick View
+
+Quick View is a **read-only**, accessible reference for high-pressure situations. A prominent link at the top and a new tab open it directly from the current device. It shows:
+- Entered people, dogs, cats and other animal counts, individual roster and vehicle/carrier/slot allocations.
+- Stored primary/backup destination and route notes, alert zone and out-of-area contact. All fields explicitly remain **unverified and potentially outdated**.
+- High-priority entered-data gaps and a clear warning that neither the app nor a self-checked form can determine whether real transport is safe.
+- Four static, cached hazard topics: wildfire, flood, extreme heat, and power/communications outage. These are condensed reminders from [FEMA wildfire guidance](https://www.ready.gov/wildfires), [FEMA flood guidance](https://www.ready.gov/floods), [CDC heat and pets](https://www.cdc.gov/heat-health/risk-factors/heat-and-pets.html), and [FEMA outage guidance](https://www.ready.gov/power-outages). They are not live monitoring or complete incident guidance.
+- A printable private quick card with every animal separately listed and blank depart/arrive headcount boxes. It may span multiple pages for large households. Print the full dedicated loading sheet for more details.
+
+**Critical:** Never delay an evacuation to use this feature. Comply with official local alerts, verify real-time roads and destination availability when possible, and do not let a green screen replace physical headcounts. Plain browser-local records and printouts are not encrypted. Quick View never writes to persistent household data; selecting a hazard only changes the current display.

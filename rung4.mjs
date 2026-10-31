@@ -25,9 +25,9 @@ export const FIELD_CHECKS = Object.freeze([
 export const SHELL_FILES = Object.freeze([
   "./", "./index.html", "./styles.css", "./app.js", "./core.mjs",
   "./rung2.mjs", "./rung2-ui.mjs", "./rung3.mjs", "./rung3-ui.mjs",
-  "./rung4.mjs", "./rung4-ui.mjs", "./vault.mjs", "./vault-ui.mjs", "./manifest.webmanifest", "./icons/shield.svg"
+  "./rung4.mjs", "./rung4-ui.mjs", "./vault.mjs", "./vault-ui.mjs", "./quick.mjs", "./quick-ui.mjs", "./manifest.webmanifest", "./icons/shield.svg"
 ]);
-export const SHELL_CACHE = "phisafe-shell-v6";
+export const SHELL_CACHE = "phisafe-shell-v7";
 
 export function defaultRung4() {
   return {field:{checks:{},notes:""}};

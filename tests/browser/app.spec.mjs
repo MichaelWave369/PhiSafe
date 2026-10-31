@@ -8,6 +8,7 @@ test("all sections render without browser exceptions and remain usable on narrow
   await expect(page.getByRole("heading",{name:"Prepared, not afraid."})).toBeVisible();
   const sections=[
     ["Overview","Your household readiness"],
+    ["Quick View","Emergency Quick View"],
     ["Household","Household & capacity"],
     ["Supplies","Supplies inventory"],
     ["Animals","Animal evacuation roster"],

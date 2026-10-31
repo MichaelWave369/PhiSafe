@@ -7,12 +7,15 @@ import { assessFieldReadiness, inspectOfflineShell } from "./rung4.mjs";
 import { renderField, printFieldCard } from "./rung4-ui.mjs";
 import { encryptPlan, decryptPlan, isEncryptedBackup, MAX_VAULT_FILE_BYTES } from "./vault.mjs";
 import { renderVault } from "./vault-ui.mjs";
+import { guideFor } from "./quick.mjs";
+import { renderQuick, printQuick } from "./quick-ui.mjs";
 
 const root = document.querySelector("#content");
 const printRoot = document.querySelector("#printReport");
 const notice = document.querySelector("#appNotice");
 let tab = "overview";
 let targetDays = 14;
+let quickGuide = "wildfire";
 let offlineAuditResult = null;
 let vaultBusy = false;
 let state = load();
@@ -301,7 +304,8 @@ function render() {
   });
   const helpers = {e,fmt,stat,pill};
   const views = {
-    overview: renderOverview, household: renderHousehold, supplies: renderSupplies,
+    overview: renderOverview, quick: () => renderQuick(state,quickGuide,helpers),
+    household: renderHousehold, supplies: renderSupplies,
     animals: renderAnimals, evacuation: renderEvacuation,
     loading: () => renderLoading(state,helpers),
     power: () => renderPower(state,helpers),
@@ -353,6 +357,17 @@ document.addEventListener("click", event => {
   const action = control.dataset.action;
   const key = control.dataset.id;
   if (action === "print") { renderPrint(); window.print(); return; }
+  if (action === "select-quick-guide") {
+    quickGuide=guideFor(control.dataset.guide).id;
+    render();
+    return;
+  }
+  if (action === "print-quick") {
+    printRoot.innerHTML=printQuick(state,quickGuide,e);
+    window.addEventListener("afterprint",renderPrint,{once:true});
+    window.print();
+    return;
+  }
   if (action === "print-field") {
     printRoot.innerHTML = printFieldCard(state,e);
     window.addEventListener("afterprint",renderPrint,{once:true});
