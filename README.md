@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.3.0, Rung 3 practice drills and paper load sheets**. Static web app, zero build dependencies, no login, no tracking.
+**v0.4.0, Rung 4 field readiness and offline cache verification**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -32,6 +32,7 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 4 field readiness:** essential/important/manual verification gaps, manually date-stamped physical checks, browser cache audit (not proof of real offline function), and a private printable field-reference card.
 - **Rung 3 evacuation practice:** animal-by-animal physical check prompts (located, secured, recounted on arrival), people headcount at boarding and destination, five predeparture prompts, incomplete/complete drill records, and printable private load sheets.
 - **Rung 2 visual evacuation loading planner:** explicit passenger/animal capacity per vehicle, one unique vehicle slot per animal, missing roster warnings, and printable allocation-aware 72-hour manifests.
 - **Rung 2 backup power estimates:** battery rated watt-hours, configurable usability and inverter loss assumptions, per-device watts/hours-per-day and simultaneous load check.
@@ -61,6 +62,7 @@ A Pages workflow deploys on pushes to `main`. In repository **Settings → Pages
 - `core.mjs`, `rung2.mjs`: normalized schema, older-backup compatibility, evacuation/power/manifest calculations.
 - `rung2-ui.mjs`: evacuation loading, power and go-bag view rendering.
 - `rung3.mjs`, `rung3-ui.mjs`: local-only practice state, validation and printable vehicle assignment sheet.
+- `rung4.mjs`, `rung4-ui.mjs`: advisory readiness gaps, manual field checks, browser cache audit and printable reference card.
 - `sw.js`, `manifest.webmanifest`: static offline shell.
 - `tests/core.test.mjs`: core invariants.
 - `.github/workflows/`: tests and Pages deployment.
@@ -109,3 +111,19 @@ The **Practice Drill** tab provides an optional simulation in calm conditions. I
 4. Save a deliberately incomplete exercise and confirm its gaps are retained in history.
 5. Finish a complete practice and verify the record remains across reload, export/import, and disconnected browser sessions.
 6. Perform an actual timed loading rehearsal in a safe setting and adjust the layout. This program does not establish legal transport capacity or animal restraint safety.
+
+
+## Rung 4 field-readiness audit
+
+The **Field Readiness** tab surfaces explicit gaps in people/animal counts, vehicle assignments, destinations, routes, water, food, medications and completed practice runs. It never computes or claims a percent-safe score.
+
+Six additional **self-confirmed physical checks** record only the check date in local storage: verify real carrier fit/ventilation, call destinations, review routes, print current plans, perform a *genuinely disconnected reload* and check out-of-area coordination. Anything older than 30 days is marked for review, not automatically declared unsafe or certified safe. Confirmed checkboxes are self-reported.
+
+The **Offline application file audit** inspects service worker control, browser cache availability, the v4 shell cache and expected cached paths. Passing the audit means files are cached, not that the app has been demonstrated to work disconnected. To complete the genuine offline test:
+1. Visit PhiSafe over HTTPS while connected and reload once; keep a private JSON backup.
+2. Run the cache audit; if missing assets are reported, refresh while online.
+3. In a calm setting, disconnect Wi-Fi and mobile data, close/reopen the installed page, reload, check the stored plan and print preview.
+4. Reconnect, follow official emergency alerts, and only then mark the separate manual offline confirmation.
+5. Print the private field card and protect it, including destinations/contact details.
+
+**Never shut off emergency communications during a real incident to run a test.** An app does not know current road closures, actual hazards, shelter availability, or whether a physical vehicle is safe. The field card is a reminder and not a replacement for official instructions. No health, household, or location details have been added to the public repo.
