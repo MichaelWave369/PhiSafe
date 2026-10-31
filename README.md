@@ -206,3 +206,5 @@ A wizard step being recorded is not an evacuation clearance. People can use the 
 - A preexisting Rung 7 browser plan and an older schema-1 JSON import open normally, with no setup overwrite or mandatory migration.
 - Mobile Chromium and offline reload function with the v8 service-worker cache.
 - Physical animal capacity, destination acceptance, communication access and a second-device encrypted backup restoration must still be verified in real life.
+
+A new saved edit automatically clears the wizard's manual backup confirmation so a previous copy is never silently treated as current. This does not delete or modify downloaded backups.

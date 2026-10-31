@@ -49,7 +49,10 @@ function clearNotice() {
   notice.hidden = true;
   notice.textContent = "";
 }
-function save() {
+function save(preserveSetupBackup = false) {
+  // Any saved plan changes require a fresh copy; self-confirmations must not stay green
+  // while an encrypted file on another device quietly becomes obsolete.
+  if (!preserveSetupBackup && state.setup?.backupReviewedAt) state.setup.backupReviewedAt=null;
   state.updatedAt = new Date().toISOString();
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -355,6 +358,7 @@ document.addEventListener("click", event => {
   if (!control) return;
   if (control.dataset.tab) {
     tab = control.dataset.tab;
+    if (tab === "setup") setupStep = setupReport(state).nextStep;
     render();
     root.focus({preventScroll:true});
     return;
@@ -505,7 +509,7 @@ document.addEventListener("change", event => {
   if (el.dataset.action === "setup-backup-review") {
     state.setup.backupReviewedAt = el.checked ? new Date().toISOString() : null;
     state = normalizeState(state);
-    save();
+    save(true);
     return;
   }
   if (el.dataset.action === "field-verify") {

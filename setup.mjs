@@ -12,6 +12,8 @@ export const SETUP_STEPS = Object.freeze([
 ]);
 const stage=(id,done,reason)=>({id,done:Boolean(done),reason});
 export function isUntouchedPlan(state) {
+  // A saved plan with no household counts can still contain important work.
+  if (state?.updatedAt) return false;
   const h=state?.household || {};
   const p=state?.plan || {};
   return (h.people||0)===0 && (h.dogs||0)===0 && (h.cats||0)===0 &&

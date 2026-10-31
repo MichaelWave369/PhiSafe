@@ -102,7 +102,7 @@ export function renderSetup(state,selected,{e,pill}) {
       '<label class="task setup-manual-confirm"><input type="checkbox" data-action="setup-backup-review" '+
         (reviewed?'checked':'')+
         '><span>I have protected a printed plan and tested recovering my own backup.'+
-        '<small>This is your manual confirmation, not verification by PhiSafe. '+
+        '<small>This is your manual confirmation, not verification by PhiSafe. Later saved edits clear this mark, reminding you to make a new backup. '+
         (reviewed?'Last confirmed: '+e(new Date(reviewed).toLocaleString()):'Not yet confirmed')+
         '</small></span></label>';
   }
