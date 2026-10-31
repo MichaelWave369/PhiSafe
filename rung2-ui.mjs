@@ -53,7 +53,7 @@ export function renderLoading(state, {e,fmt,stat,pill}) {
       '</option>').join("") + '</select></label></div>';
   }).join("");
 
-  return '<h2>Evacuation loading planner</h2>' +
+  return '<h2>Evacuation loading planner</h2><div class="section-title"><span class="hint">Printable vehicle and animal load sheet</span><button type="button" class="secondary small" data-action="print-loading">Print vehicle load sheet</button></div>' +
     '<p class="lead">Map actual passenger seats and secured animal spaces to each vehicle. Assignment is not proof that the layout is safe. Rehearse it before an emergency.</p>' +
     '<div class="section grid three">' +
       stat("People",r.assignedPeople+" / "+r.people,"Assigned to vehicle seats") +

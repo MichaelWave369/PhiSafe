@@ -6,7 +6,7 @@ PhiSafe is a privacy-first, offline-capable household preparedness planner. It i
 
 ## Status
 
-**v0.2.0, Rung 2 evacuation and backup-power planning**. Static web app, zero build dependencies, no login, no tracking.
+**v0.3.0, Rung 3 practice drills and paper load sheets**. Static web app, zero build dependencies, no login, no tracking.
 
 ## Try it locally
 
@@ -32,6 +32,7 @@ node --check app.js
 - Manual food and medication supply-day estimates, not automatic medical advice.
 - Inventory with user-set quantities, goals and optional expiration dates.
 - Per-animal roster with carrier/secured-position assignments and resettable drill loading marks.
+- **Rung 3 evacuation practice:** animal-by-animal physical check prompts (located, secured, recounted on arrival), people headcount at boarding and destination, five predeparture prompts, incomplete/complete drill records, and printable private load sheets.
 - **Rung 2 visual evacuation loading planner:** explicit passenger/animal capacity per vehicle, one unique vehicle slot per animal, missing roster warnings, and printable allocation-aware 72-hour manifests.
 - **Rung 2 backup power estimates:** battery rated watt-hours, configurable usability and inverter loss assumptions, per-device watts/hours-per-day and simultaneous load check.
 - **Rung 2 72-hour go-bag checklist:** people, pet, shared and per-animal tasks; locally saved packing marks; dedicated printable sheet.
@@ -59,6 +60,7 @@ A Pages workflow deploys on pushes to `main`. In repository **Settings → Pages
 - `index.html`, `styles.css`, `app.js`: no-framework UI, responsive and print friendly.
 - `core.mjs`, `rung2.mjs`: normalized schema, older-backup compatibility, evacuation/power/manifest calculations.
 - `rung2-ui.mjs`: evacuation loading, power and go-bag view rendering.
+- `rung3.mjs`, `rung3-ui.mjs`: local-only practice state, validation and printable vehicle assignment sheet.
 - `sw.js`, `manifest.webmanifest`: static offline shell.
 - `tests/core.test.mjs`: core invariants.
 - `.github/workflows/`: tests and Pages deployment.
@@ -86,3 +88,24 @@ MIT. See [LICENSE](LICENSE).
 3. Add an approximately 1000 Wh battery at 80% usable and 85% inverter efficiency; for 160 Wh/day listed load, the mathematical estimate should show 4.25 days, excluding real-world losses.
 4. Prepare a 72-hour checklist, print it and confirm every animal has its own individual line.
 5. Export plan, reload browser, import backup, test offline after a successful HTTPS visit. Verify no private family data appears in GitHub.
+
+ 
+## Rung 3: physical rehearsal before crisis
+
+The **Practice Drill** tab provides an optional simulation in calm conditions. It:
+- Verifies an individual locate, vehicle securement and destination recount for each animal.
+- Separately records people boarding and arriving.
+- Requires manual acknowledgement of route review, confirmed destinations, medicines/supplies, vehicle restraint/ventilation checks, and offline/printed plan access.
+- Records completed **or incomplete** drills with elapsed time and unresolved items, retaining the most recent 20 in local browser storage.
+- Can print a paper load sheet listing the planned vehicle/spot and three blank verification boxes for each animal.
+
+**Never run a drill during a real evacuation.** Do not wait to finish any app checklist when local officials order departure or conditions become dangerous. Marked steps are self-reported, and no one has validated vehicle fit, evacuation routes, destination acceptance, or actual departure times. Printouts and backups contain private details and are not encrypted.
+
+### Rung 3 field test
+
+1. Configure two people, eight dogs and nine cats; assign each animal a separate physically appropriate carrier and vehicle space.
+2. Print the load sheet. Verify every animal appears once, with a carrier and assigned place.
+3. Start a **practice** session. Mark location, securement, and arrival recount in order. Enter people boarded and people at destination, plus stage confirmations.
+4. Save a deliberately incomplete exercise and confirm its gaps are retained in history.
+5. Finish a complete practice and verify the record remains across reload, export/import, and disconnected browser sessions.
+6. Perform an actual timed loading rehearsal in a safe setting and adjust the layout. This program does not establish legal transport capacity or animal restraint safety.

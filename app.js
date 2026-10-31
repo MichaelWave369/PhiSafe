@@ -1,6 +1,8 @@
 import { STORAGE_KEY, ACTIONS, defaultState, normalizeState, metrics, upcomingExpiry } from "./core.mjs";
 import { loadingReport } from "./rung2.mjs";
 import { renderLoading, renderPower, renderGoBags, manifestPrint } from "./rung2-ui.mjs";
+import { rehearsalReport, buildRehearsalRecord, newRehearsal } from "./rung3.mjs";
+import { renderDrill, printLoadingSheet } from "./rung3-ui.mjs";
 
 const root = document.querySelector("#content");
 const printRoot = document.querySelector("#printReport");
@@ -78,6 +80,7 @@ function textField(label, key, placeholder = "", big = false) {
 function renderOverview() {
   const m = metrics(state, targetDays);
   const loading = loadingReport(state);
+  const rehearsal = rehearsalReport(state);
   const h = state.household;
   const hasPeople = h.people > 0;
   const humanWater = m.humanWaterNeeded;
@@ -120,6 +123,11 @@ function renderOverview() {
       '<div class="kv"><span>Essential medications</span><strong>' + fmt(h.medsDays) + ' days</strong></div>' +
       '<p class="hint">All days are manual estimates entered by you, not calculated from calories or prescriptions.</p>') +
     panel("Priority gaps", '<ul class="clean">' + flags.map(x => '<li>' + e(x) + '</li>').join("") + '</ul>') +
+    '</div><div class="section">' + panel("Practice evacuation", '<div class="flex"><div><strong>' +
+      (rehearsal.active ? "Practice in progress" : state.rehearsal.history.length ?
+        "Last drill: " + e(state.rehearsal.history[0].status) : "No rehearsal recorded yet") +
+      '</strong><p class="hint">Run an animal-by-animal loading and destination recount practice, then save observations locally.</p></div>' +
+      '<button type="button" class="secondary small" data-tab="drill">Open rehearsal</button></div>') +
     '</div><div class="section">' + panel("Core action checklist", '<div class="flex"><strong>' + m.tasksDone + ' of ' + m.tasksTotal + ' completed</strong><button class="secondary small" data-tab="evacuation">Open checklist</button></div>' + progressTasks) + '</div>' +
     '<div class="warning-note"><strong>No live monitoring.</strong> The connection indicator only describes this browser. It does not check local hazards, public safety alerts, road closures or shelter availability.</div>';
 }
@@ -276,6 +284,7 @@ function render() {
     loading: () => renderLoading(state,helpers),
     power: () => renderPower(state,helpers),
     bags: () => renderGoBags(state,helpers),
+    drill: () => renderDrill(state,helpers),
     guides: renderGuides
   };
   root.innerHTML = views[tab]();
@@ -309,6 +318,39 @@ document.addEventListener("click", event => {
   const action = control.dataset.action;
   const key = control.dataset.id;
   if (action === "print") { renderPrint(); window.print(); return; }
+  if (action === "print-loading") {
+    printRoot.innerHTML = printLoadingSheet(state,e);
+    window.addEventListener("afterprint", renderPrint, {once:true});
+    window.print();
+    return;
+  }
+  if (action === "drill-start") {
+    if(state.rehearsal.startedAt) { tell("A drill is already active."); return; }
+    state.rehearsal=newRehearsal(state.rehearsal.history);
+    save();
+    return;
+  }
+  if (action === "drill-cancel") {
+    if (state.rehearsal.startedAt && confirm("Discard this practice session? Past records will remain.")) {
+      const past=state.rehearsal.history;
+      state.rehearsal=newRehearsal(past);
+      state.rehearsal.startedAt=null;
+      save();
+    }
+    return;
+  }
+  if (action === "drill-finish") {
+    if (!state.rehearsal.startedAt) { tell("Start a practice drill first."); return; }
+    const status=rehearsalReport(state);
+    if (status.warnings.length && !confirm("Practice is incomplete ("+status.warnings.length+" unresolved checks). Save this as an incomplete drill?")) return;
+    const record=buildRehearsalRecord(state,new Date().toISOString());
+    const history=[record,...state.rehearsal.history].slice(0,20);
+    state.rehearsal=newRehearsal(history);
+    state.rehearsal.startedAt=null;
+    save();
+    tell(record.status==="complete" ? "Practice recorded as complete. Verify physical conditions separately." : "Incomplete practice recorded for follow-up.");
+    return;
+  }
   if (action === "print-manifest") {
     printRoot.innerHTML = manifestPrint(state,e);
     window.addEventListener("afterprint", renderPrint, {once:true});
@@ -368,6 +410,36 @@ document.addEventListener("change", event => {
     state.tasks[el.dataset.id] = el.checked;
     save();
   }
+  if (el.dataset.action === "drill-stage") {
+    if (!state.rehearsal.startedAt) return;
+    if (el.checked) state.rehearsal.stageChecks[el.dataset.id]=true;
+    else delete state.rehearsal.stageChecks[el.dataset.id];
+    state=normalizeState(state);
+    save();
+    return;
+  }
+  if (el.dataset.action === "drill-pet") {
+    if (!state.rehearsal.startedAt || !state.pets.some(p=>p.id===el.dataset.id)) return;
+    const field=el.dataset.field;
+    if (!["located","secured","arrived"].includes(field)) return;
+    const current=state.rehearsal.animalChecks[el.dataset.id] ||
+      {located:false,secured:false,arrived:false};
+    if (el.checked && field==="secured" && !current.located) {
+      tell("Locate and physically verify this animal first.");
+      render(); return;
+    }
+    if (el.checked && field==="arrived" && !current.secured) {
+      tell("Verify this animal is secured before the destination recount.");
+      render(); return;
+    }
+    current[field]=el.checked;
+    if (field==="located" && !el.checked) {current.secured=false;current.arrived=false;}
+    if (field==="secured" && !el.checked) current.arrived=false;
+    state.rehearsal.animalChecks[el.dataset.id]=current;
+    state=normalizeState(state);
+    save();
+    return;
+  }
   if (el.dataset.action === "toggle-manifest") {
     const id=el.dataset.id;
     if (el.checked) state.manifest.packed[id]=true;
@@ -398,7 +470,7 @@ document.addEventListener("change", event => {
 document.addEventListener("submit", event => {
   const form = event.target;
   const id = form.id || form.dataset.form;
-  if (!["householdForm","supplyForm","petForm","planForm","vehicleAddForm","edit-vehicle","powerSettingsForm","powerDeviceForm"].includes(id)) return;
+  if (!["householdForm","supplyForm","petForm","planForm","vehicleAddForm","edit-vehicle","powerSettingsForm","powerDeviceForm","drillPeopleForm"].includes(id)) return;
   event.preventDefault();
   const data = Object.fromEntries(new FormData(form).entries());
   if (form.id === "householdForm") {
@@ -424,6 +496,14 @@ document.addEventListener("submit", event => {
     const next = structuredClone(state);
     Object.keys(next.plan).forEach(key => next.plan[key] = data[key]);
     state = normalizeState(next);
+    save();
+  }
+  if (id === "drillPeopleForm") {
+    if (!state.rehearsal.startedAt) return;
+    state.rehearsal.peopleBoarded=data.peopleBoarded;
+    state.rehearsal.peopleAtDestination=data.peopleAtDestination;
+    state.rehearsal.notes=data.notes;
+    state=normalizeState(state);
     save();
   }
   if (id === "vehicleAddForm") {
